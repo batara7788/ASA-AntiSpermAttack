@@ -9,7 +9,7 @@ public sealed class OverviewPage : PageBase
     private readonly StatCard scannedCard = new("Проверено файлов", Theme.AccentSecondary);
     private readonly StatCard threatsCard = new("Угроз поймано", Theme.Danger);
     private readonly StatCard quarantineCard = new("В карантине", Theme.Warning);
-    private readonly StatCard webShieldCard = new("Опасных сайтов заблокировано", Theme.Accent);
+    private readonly StatCard webShieldCard = new("Сайтов заблокировано", Theme.Accent);
     private readonly ActivityChart chart = new();
     private readonly FlowLayoutPanel modulesPanel = new() { AutoSize = true, FlowDirection = FlowDirection.LeftToRight, WrapContents = true, BackColor = Color.Transparent };
     private readonly System.Windows.Forms.Timer refreshTimer = new() { Interval = 2000 };

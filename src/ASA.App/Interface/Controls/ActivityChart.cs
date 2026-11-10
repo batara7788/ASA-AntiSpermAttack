@@ -25,7 +25,7 @@ public sealed class ActivityChart : Control
     {
         Graphics graphics = eventArgs.Graphics;
         graphics.SmoothingMode = SmoothingMode.AntiAlias;
-        graphics.Clear(Theme.Card);
+        Ornaments.FillBackgroundFor(this, graphics, ClientRectangle, Ornaments.DamaskTile);
         Ornaments.DrawOrnateFrame(graphics, ClientRectangle, Theme.Gold);
 
         TextRenderer.DrawText(graphics, "Активность за 14 дней", Theme.SubtitleFont, new Point(30, 16), Theme.PaleGold);

@@ -37,7 +37,7 @@ public abstract class PageBase : UserControl
 
     protected override void OnPaintBackground(PaintEventArgs eventArgs)
     {
-        Ornaments.FillDamask(eventArgs.Graphics, ClientRectangle, Ornaments.DamaskTile, Point.Empty);
+        Ornaments.FillBackgroundFor(this, eventArgs.Graphics, ClientRectangle, Ornaments.DamaskTile);
     }
 
     protected void RunOnInterface(Action action)
@@ -82,7 +82,7 @@ public sealed class DamaskFlowPanel : FlowLayoutPanel
 
     protected override void OnPaintBackground(PaintEventArgs eventArgs)
     {
-        Ornaments.FillDamask(eventArgs.Graphics, ClientRectangle, Ornaments.DamaskTile, new Point(-Left, -Top));
+        Ornaments.FillBackgroundFor(this, eventArgs.Graphics, ClientRectangle, Ornaments.DamaskTile);
     }
 
     protected override void OnScroll(ScrollEventArgs eventArgs)
@@ -104,13 +104,14 @@ public sealed class OrnateFramePanel : Panel
     {
         DoubleBuffered = true;
         BackColor = Theme.Card;
-        Padding = new Padding(12);
+        Padding = new Padding(10, 12, 10, 10);
+        SetStyle(ControlStyles.OptimizedDoubleBuffer | ControlStyles.AllPaintingInWmPaint | ControlStyles.ResizeRedraw, true);
     }
 
-    protected override void OnPaint(PaintEventArgs eventArgs)
+    protected override void OnPaintBackground(PaintEventArgs eventArgs)
     {
-        base.OnPaint(eventArgs);
-        Ornaments.DrawOrnateFrame(eventArgs.Graphics, ClientRectangle, Theme.Gold);
+        Ornaments.FillBackgroundFor(this, eventArgs.Graphics, ClientRectangle, Ornaments.DamaskTile);
+        Ornaments.DrawGlassPanel(eventArgs.Graphics, ClientRectangle, Theme.Card, 10, false);
     }
 
     protected override void OnResize(EventArgs eventArgs)
@@ -129,25 +130,28 @@ public sealed class PageHeader : Control
     {
         this.title = title;
         this.description = description;
-        Height = 92;
+        Height = 96;
         DoubleBuffered = true;
         SetStyle(ControlStyles.SupportsTransparentBackColor, true);
     }
 
     protected override void OnPaintBackground(PaintEventArgs eventArgs)
     {
-        Ornaments.FillDamask(eventArgs.Graphics, ClientRectangle, Ornaments.DamaskTile, new Point(-Left, -Top));
+        Ornaments.FillBackgroundFor(this, eventArgs.Graphics, ClientRectangle, Ornaments.DamaskTile);
     }
 
     protected override void OnPaint(PaintEventArgs eventArgs)
     {
         Graphics graphics = eventArgs.Graphics;
         graphics.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
-        using var fleurBrush = new SolidBrush(Theme.Gold);
-        Ornaments.DrawFleurDeLis(graphics, fleurBrush, new PointF(14, 24), 26);
-        TextRenderer.DrawText(graphics, title, Theme.TitleFont, new Point(38, 4), Theme.PaleGold);
-        TextRenderer.DrawText(graphics, description, Theme.BodyFont, new Point(40, 44), Theme.MutedText);
-        Ornaments.DrawDivider(graphics, new Rectangle(0, 68, Math.Min(Width - 30, 900), 16), Theme.Gold);
+        graphics.TextRenderingHint = System.Drawing.Text.TextRenderingHint.AntiAliasGridFit;
+
+        Ornaments.DrawImperialEmblem(graphics, new PointF(26, 30), 54);
+        Ornaments.DrawSpacedText(graphics, title.ToUpperInvariant(), Theme.TitleFont, new PointF(64, 6), 4f);
+        TextRenderer.DrawText(graphics, description, Theme.BodyFont, new Point(66, 44), Theme.MutedText);
+
+        int dividerWidth = Math.Min(Width - 30, 900);
+        Ornaments.DrawDivider(graphics, new Rectangle(0, 70, dividerWidth, 16), Theme.Gold);
     }
 
     protected override void OnResize(EventArgs eventArgs)

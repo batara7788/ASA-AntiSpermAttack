@@ -39,10 +39,10 @@ public sealed class MainForm : Form
         navigation = new RoyalSidebar
         {
             Dock = DockStyle.Left,
-            Width = 250,
+            Width = 252,
             FlowDirection = FlowDirection.TopDown,
             WrapContents = false,
-            Padding = new Padding(16, 18, 18, 14)
+            Padding = new Padding(16, 14, 22, 14)
         };
         navigation.Controls.Add(CreateLogo());
 
@@ -178,9 +178,11 @@ public sealed class MainForm : Form
         return new RoyalLogo { Margin = new Padding(0, 0, 0, 14) };
     }
 
+    private static readonly string[] RomanNumerals = { "I", "II", "III", "IV", "V", "VI", "VII", "VIII", "IX", "X" };
+
     private void AddPage(string title, PageBase page)
     {
-        var button = new NavigationItem(title) { Margin = new Padding(0, 0, 0, 4) };
+        var button = new NavigationItem(RomanNumerals[pagesByButton.Count], title) { Margin = new Padding(0, 0, 0, 3) };
         button.Click += (_, _) => ShowPage(button);
         navigation.Controls.Add(button);
         pagesByButton[button] = page;
@@ -264,6 +266,7 @@ public sealed class MainForm : Form
 
     private void HandleRansomware(RansomwareSuspect? suspect, string reason)
     {
+        host.Sounds.Play(SoundEvent.ThreatDetected);
         if (suspect == null)
         {
             host.Notifier.Show("Похоже на шифровальщика!", reason + "\nВиновника найти не удалось. Сохраните важное на флешку и запустите полную проверку.", ToolTipIcon.Error);

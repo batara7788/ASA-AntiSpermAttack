@@ -26,8 +26,10 @@ public sealed class ProtectionHost : IDisposable
         Quarantine = new Quarantine(Folders.QuarantineFolder);
         GameMode = new GameModeDetector { Enabled = Settings.GameModeEnabled };
         Notifier = new Notifier(GameMode);
+        Sounds = new SoundService(GameMode, () => Settings.SoundsEnabled);
         Engine = new ClamAvEngine(Folders, Journal, HttpClient);
         Scanner = new ScanService(Engine, Quarantine, Statistics, Journal, Notifier, () => Settings, Folders.RootFolder);
+        Scanner.ThreatDetected += _ => Sounds.Play(SoundEvent.ThreatDetected);
         RealTime = new RealTimeMonitor(Scanner);
         Usb = new UsbMonitor(Scanner, Journal, Notifier);
         Processes = new ProcessMonitor(Scanner, Journal);
@@ -55,6 +57,8 @@ public sealed class ProtectionHost : IDisposable
     public GameModeDetector GameMode { get; }
 
     public Notifier Notifier { get; }
+
+    public SoundService Sounds { get; }
 
     public ClamAvEngine Engine { get; }
 
@@ -89,6 +93,7 @@ public sealed class ProtectionHost : IDisposable
         {
             Settings.LastDatabaseUpdate = DateTime.Now;
             SaveSettings();
+            Sounds.Play(SoundEvent.ProtectionStarted);
         }
 
         maintenanceTimer = new System.Threading.Timer(_ => RunMaintenance(), null, TimeSpan.FromSeconds(30), TimeSpan.FromMinutes(1));
@@ -231,7 +236,11 @@ public sealed class ProtectionHost : IDisposable
 
             if (now - Settings.LastDatabaseUpdate > TimeSpan.FromHours(12) && Engine.State == EngineState.Ready)
             {
-                Engine.UpdateDatabaseAsync(stopSource.Token).GetAwaiter().GetResult();
+                if (Engine.UpdateDatabaseAsync(stopSource.Token).GetAwaiter().GetResult())
+                {
+                    Sounds.Play(SoundEvent.DatabaseUpdated);
+                }
+
                 Settings.LastDatabaseUpdate = now;
                 SaveSettings();
             }

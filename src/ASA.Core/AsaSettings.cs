@@ -20,6 +20,8 @@ public sealed class AsaSettings
 
     public bool GameModeEnabled { get; set; } = true;
 
+    public bool SoundsEnabled { get; set; } = true;
+
     public bool ScheduledScanEnabled { get; set; } = true;
 
     public DayOfWeek ScheduledScanDay { get; set; } = DayOfWeek.Sunday;

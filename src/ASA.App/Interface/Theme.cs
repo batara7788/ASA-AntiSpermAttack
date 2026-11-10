@@ -23,27 +23,16 @@ public static class Theme
     public static readonly Font SmallFont = new("Segoe UI", 8.5f);
     public static readonly Font BigNumberFont = new("Georgia", 22f, FontStyle.Bold);
     public static readonly Font NavigationFont = new("Georgia", 11f);
-    public static readonly Font LogoFont = new("Georgia", 26f, FontStyle.Bold);
+    public static readonly Font LogoFont = new("Georgia", 24f, FontStyle.Bold);
+    public static readonly Font ButtonFont = new("Segoe UI", 10f);
+    public static readonly Font ButtonFontBold = new("Segoe UI Semibold", 10f);
+    public static readonly Font StatusTitleFont = new("Georgia", 19f, FontStyle.Bold);
+    public static readonly Font NumeralFont = new("Georgia", 10.5f, FontStyle.Bold);
+    public static readonly Font SmallCapsFont = new("Georgia", 8.5f);
 
     public static Button CreateButton(string text, bool primary = false)
     {
-        var button = new Button
-        {
-            Text = text,
-            AutoSize = true,
-            AutoSizeMode = AutoSizeMode.GrowAndShrink,
-            Padding = new Padding(14, 6, 14, 6),
-            Margin = new Padding(0, 0, 10, 10),
-            FlatStyle = FlatStyle.Flat,
-            BackColor = primary ? Gold : Card,
-            ForeColor = primary ? Sidebar : PaleGold,
-            Font = BodyFont,
-            Cursor = Cursors.Hand
-        };
-        button.FlatAppearance.BorderColor = primary ? PaleGold : Border;
-        button.FlatAppearance.MouseOverBackColor = primary ? PaleGold : CardHover;
-        button.FlatAppearance.MouseDownBackColor = primary ? Border : Sidebar;
-        return button;
+        return new GlossButton(text, primary) { Margin = new Padding(0, 0, 10, 10) };
     }
 
     public static Label CreateLabel(string text, Font? font = null, Color? color = null)

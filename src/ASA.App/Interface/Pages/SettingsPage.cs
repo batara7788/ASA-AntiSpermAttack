@@ -10,6 +10,7 @@ public sealed class SettingsPage : PageBase
     private readonly CheckBox autorunCheckBox;
     private readonly CheckBox ransomwareCheckBox;
     private readonly CheckBox gameModeCheckBox;
+    private readonly CheckBox soundsCheckBox;
     private readonly CheckBox scheduleCheckBox;
     private readonly ComboBox dayComboBox = CreateComboBox(160);
     private readonly NumericUpDown hourNumeric = new() { Minimum = 0, Maximum = 23, Width = 70, BackColor = Theme.Card, ForeColor = Theme.Text };
@@ -29,9 +30,10 @@ public sealed class SettingsPage : PageBase
         autorunCheckBox = Theme.CreateCheckBox("Следить за автозагрузкой", host.Settings.AutorunMonitorEnabled);
         ransomwareCheckBox = Theme.CreateCheckBox("Защита от шифровальщиков (файлы-ловушки и слежка за массовыми изменениями)", host.Settings.RansomwareProtectionEnabled);
         gameModeCheckBox = Theme.CreateCheckBox("Игровой режим: не мешать в играх и полноэкранных фильмах", host.Settings.GameModeEnabled);
+        soundsCheckBox = Theme.CreateCheckBox("Звуки: фанфары при запуске, сигнал при угрозе, перезвон после проверки", host.Settings.SoundsEnabled);
         scheduleCheckBox = Theme.CreateCheckBox("Полная проверка по расписанию", host.Settings.ScheduledScanEnabled);
 
-        foreach (CheckBox checkBox in new[] { realTimeCheckBox, usbCheckBox, processCheckBox, autorunCheckBox, ransomwareCheckBox, gameModeCheckBox, scheduleCheckBox })
+        foreach (CheckBox checkBox in new[] { realTimeCheckBox, usbCheckBox, processCheckBox, autorunCheckBox, ransomwareCheckBox, gameModeCheckBox, soundsCheckBox, scheduleCheckBox })
         {
             checkBox.CheckedChanged += (_, _) => SaveModules();
         }
@@ -50,7 +52,7 @@ public sealed class SettingsPage : PageBase
         };
 
         Content.Controls.Add(Theme.CreateLabel("Модули", Theme.SubtitleFont));
-        Content.Controls.AddRange(new Control[] { realTimeCheckBox, usbCheckBox, processCheckBox, autorunCheckBox, ransomwareCheckBox, gameModeCheckBox, scheduleCheckBox });
+        Content.Controls.AddRange(new Control[] { realTimeCheckBox, usbCheckBox, processCheckBox, autorunCheckBox, ransomwareCheckBox, gameModeCheckBox, soundsCheckBox, scheduleCheckBox });
 
         FlowLayoutPanel scheduleRow = Theme.CreateButtonRow();
         scheduleRow.Controls.Add(Theme.CreateLabel("День:"));
@@ -80,6 +82,7 @@ public sealed class SettingsPage : PageBase
             bool updated = await Task.Run(() => Host.Engine.UpdateDatabaseAsync(CancellationToken.None));
             if (updated)
             {
+                Host.Sounds.Play(SoundEvent.DatabaseUpdated);
                 Host.Settings.LastDatabaseUpdate = DateTime.Now;
                 Host.SaveSettings();
             }
@@ -117,6 +120,7 @@ public sealed class SettingsPage : PageBase
         Host.Settings.AutorunMonitorEnabled = autorunCheckBox.Checked;
         Host.Settings.RansomwareProtectionEnabled = ransomwareCheckBox.Checked;
         Host.Settings.GameModeEnabled = gameModeCheckBox.Checked;
+        Host.Settings.SoundsEnabled = soundsCheckBox.Checked;
         Host.Settings.ScheduledScanEnabled = scheduleCheckBox.Checked;
         Host.SaveSettings();
         Host.ApplyModuleSettings();

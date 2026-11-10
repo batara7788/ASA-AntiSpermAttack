@@ -14,45 +14,49 @@ public sealed class RoyalSidebar : FlowLayoutPanel
     protected override void OnPaintBackground(PaintEventArgs eventArgs)
     {
         Graphics graphics = eventArgs.Graphics;
-        Ornaments.FillDamask(graphics, ClientRectangle, Ornaments.SidebarTile, Point.Empty);
+        Ornaments.FillBackgroundFor(this, graphics, ClientRectangle, Ornaments.SidebarTile);
         graphics.SmoothingMode = SmoothingMode.AntiAlias;
 
-        int borderX = Width - 6;
-        using var thickPen = new Pen(Theme.Gold, 2f);
-        using var thinPen = new Pen(Color.FromArgb(120, Theme.Gold), 1f);
-        graphics.DrawLine(thickPen, borderX, 0, borderX, Height);
-        graphics.DrawLine(thinPen, borderX - 4, 0, borderX - 4, Height);
-
-        using var brush = new SolidBrush(Theme.Gold);
-        for (int y = 40; y < Height; y += 80)
+        var stripe = new RectangleF(Width - 16, 0, 14, Height);
+        using (var stripeBrush = new SolidBrush(Color.FromArgb(160, 4, 9, 26)))
         {
-            graphics.FillPolygon(brush, new[]
-            {
-                new PointF(borderX - 2, y - 6),
-                new PointF(borderX + 3, y),
-                new PointF(borderX - 2, y + 6),
-                new PointF(borderX - 7, y)
-            });
+            graphics.FillRectangle(stripeBrush, stripe);
         }
 
-        int bottomY = Height - 70;
-        Ornaments.DrawFleurDeLis(graphics, brush, new PointF((Width - 10) / 2f, bottomY), 40);
-        Ornaments.DrawDivider(graphics, new Rectangle(14, bottomY + 30, Width - 40, 14), Theme.Gold);
+        using (LinearGradientBrush gold = Ornaments.CreateMetallicGoldBrush(new RectangleF(0, 0, Width, 40), false))
+        using (var goldPen = new Pen(gold, 2f))
+        {
+            graphics.DrawLine(goldPen, stripe.Left, 0, stripe.Left, Height);
+            graphics.DrawLine(goldPen, stripe.Right, 0, stripe.Right, Height);
+        }
+
+        using var starBrush = new SolidBrush(Theme.Gold);
+        for (int y = 30; y < Height; y += 46)
+        {
+            Ornaments.DrawStar(graphics, starBrush, new PointF(stripe.Left + stripe.Width / 2, y), 4.5f, 5);
+        }
+
+        int bottomY = Height - 92;
+        var palmetteBrush = new SolidBrush(Color.FromArgb(200, Theme.Gold));
+        Ornaments.DrawPalmette(graphics, palmetteBrush, new PointF((Width - 16) / 2f, bottomY + 46), 40);
+        palmetteBrush.Dispose();
+        Ornaments.DrawMeanderBand(graphics, new RectangleF(14, bottomY + 56, Width - 46, 14), Color.FromArgb(200, Theme.Gold));
     }
 }
 
 public sealed class NavigationItem : Control
 {
+    private readonly string numeral;
     private bool selected;
     private bool hovered;
 
-    public NavigationItem(string text)
+    public NavigationItem(string numeral, string text)
     {
+        this.numeral = numeral;
         Text = text;
-        Size = new Size(206, 44);
+        Size = new Size(204, 44);
         Cursor = Cursors.Hand;
-        DoubleBuffered = true;
-        SetStyle(ControlStyles.SupportsTransparentBackColor | ControlStyles.Selectable, false);
+        SetStyle(ControlStyles.Selectable, false);
         SetStyle(ControlStyles.OptimizedDoubleBuffer | ControlStyles.AllPaintingInWmPaint | ControlStyles.UserPaint, true);
     }
 
@@ -82,46 +86,34 @@ public sealed class NavigationItem : Control
 
     protected override void OnPaintBackground(PaintEventArgs eventArgs)
     {
-        Ornaments.FillDamask(eventArgs.Graphics, ClientRectangle, Ornaments.SidebarTile, new Point(-Left, -Top));
+        Ornaments.FillBackgroundFor(this, eventArgs.Graphics, ClientRectangle, Ornaments.SidebarTile);
     }
 
     protected override void OnPaint(PaintEventArgs eventArgs)
     {
         Graphics graphics = eventArgs.Graphics;
         graphics.SmoothingMode = SmoothingMode.AntiAlias;
-        var area = new Rectangle(0, 0, Width - 1, Height - 1);
+        var area = new Rectangle(1, 2, Width - 3, Height - 5);
 
         if (selected)
         {
-            using var fill = new LinearGradientBrush(area, Color.FromArgb(150, 122, 96, 42), Color.FromArgb(20, 122, 96, 42), LinearGradientMode.Horizontal);
-            graphics.FillRectangle(fill, area);
-            using var goldPen = new Pen(Theme.Gold, 1f);
-            graphics.DrawLine(goldPen, 0, 0, Width * 0.8f, 0);
-            graphics.DrawLine(goldPen, 0, Height - 1, Width * 0.8f, Height - 1);
-            using var barBrush = new SolidBrush(Theme.Gold);
-            graphics.FillRectangle(barBrush, 0, 0, 4, Height);
+            Ornaments.DrawGlassPanel(graphics, area, Color.FromArgb(34, 58, 128), 8, false);
         }
         else if (hovered)
         {
-            using var fill = new SolidBrush(Color.FromArgb(70, Theme.CardHover));
-            graphics.FillRectangle(fill, area);
+            Ornaments.DrawGlassPanel(graphics, area, Color.FromArgb(20, 36, 84), 8, false);
         }
 
-        Color markerColor = selected ? Theme.PaleGold : Color.FromArgb(150, Theme.Gold);
-        using (var markerBrush = new SolidBrush(markerColor))
+        Color numeralColor = selected ? Theme.PaleGold : Color.FromArgb(170, Theme.Gold);
+        TextRenderer.DrawText(graphics, numeral, Theme.NumeralFont, new Rectangle(6, 0, 40, Height), numeralColor, TextFormatFlags.VerticalCenter | TextFormatFlags.HorizontalCenter);
+
+        using (var separator = new Pen(Color.FromArgb(selected ? 200 : 90, Theme.Gold)))
         {
-            float centerY = Height / 2f;
-            graphics.FillPolygon(markerBrush, new[]
-            {
-                new PointF(22, centerY - 5),
-                new PointF(27, centerY),
-                new PointF(22, centerY + 5),
-                new PointF(17, centerY)
-            });
+            graphics.DrawLine(separator, 50, 13, 50, Height - 13);
         }
 
-        Color textColor = selected ? Theme.PaleGold : hovered ? Theme.Text : Theme.MutedText;
-        TextRenderer.DrawText(graphics, Text, Theme.NavigationFont, new Rectangle(38, 0, Width - 40, Height), textColor, TextFormatFlags.VerticalCenter | TextFormatFlags.Left);
+        Color textColor = selected ? Color.White : hovered ? Theme.Text : Theme.MutedText;
+        TextRenderer.DrawText(graphics, Text, Theme.NavigationFont, new Rectangle(60, 0, Width - 62, Height), textColor, TextFormatFlags.VerticalCenter | TextFormatFlags.Left);
     }
 }
 
@@ -129,28 +121,39 @@ public sealed class RoyalLogo : Control
 {
     public RoyalLogo()
     {
-        Size = new Size(206, 128);
-        DoubleBuffered = true;
+        Size = new Size(204, 176);
         SetStyle(ControlStyles.OptimizedDoubleBuffer | ControlStyles.AllPaintingInWmPaint | ControlStyles.UserPaint, true);
     }
 
     protected override void OnPaintBackground(PaintEventArgs eventArgs)
     {
-        Ornaments.FillDamask(eventArgs.Graphics, ClientRectangle, Ornaments.SidebarTile, new Point(-Left, -Top));
+        Ornaments.FillBackgroundFor(this, eventArgs.Graphics, ClientRectangle, Ornaments.SidebarTile);
     }
 
     protected override void OnPaint(PaintEventArgs eventArgs)
     {
         Graphics graphics = eventArgs.Graphics;
         graphics.SmoothingMode = SmoothingMode.AntiAlias;
+        graphics.TextRenderingHint = System.Drawing.Text.TextRenderingHint.AntiAliasGridFit;
         float centerX = Width / 2f;
 
-        Ornaments.DrawCrown(graphics, new RectangleF(centerX - 22, 2, 44, 30), Theme.Gold);
+        using (var glow = new GraphicsPath())
+        {
+            glow.AddEllipse(centerX - 60, -4, 120, 96);
+            using var glowBrush = new PathGradientBrush(glow) { CenterColor = Color.FromArgb(70, Theme.Gold), SurroundColors = new[] { Color.FromArgb(0, Theme.Gold) } };
+            graphics.FillPath(glowBrush, glow);
+        }
 
-        var titleFormat = TextFormatFlags.HorizontalCenter | TextFormatFlags.Top;
-        TextRenderer.DrawText(graphics, "ASA", Theme.LogoFont, new Rectangle(0, 30, Width, 46), Theme.PaleGold, titleFormat);
-        Ornaments.DrawDivider(graphics, new Rectangle(10, 78, Width - 20, 12), Theme.Gold);
-        TextRenderer.DrawText(graphics, "AntiSpermAttack", new Font("Georgia", 10f, FontStyle.Italic), new Rectangle(0, 92, Width, 18), Theme.Gold, titleFormat);
-        TextRenderer.DrawText(graphics, "императорская защита", Theme.SmallFont, new Rectangle(0, 110, Width, 16), Theme.MutedText, titleFormat);
+        Ornaments.DrawImperialEmblem(graphics, new PointF(centerX, 46), 84);
+
+        var titleArea = new RectangleF(0, 94, Width, 40);
+        using (LinearGradientBrush titleBrush = Ornaments.CreateMetallicGoldBrush(titleArea))
+        using (var format = new StringFormat { Alignment = StringAlignment.Center })
+        {
+            graphics.DrawString("A  S  A", Theme.LogoFont, titleBrush, titleArea, format);
+        }
+
+        Ornaments.DrawDivider(graphics, new Rectangle(4, 134, Width - 8, 14), Theme.Gold);
+        TextRenderer.DrawText(graphics, "ANTISPERMATTACK", Theme.SmallCapsFont, new Rectangle(0, 150, Width, 18), Theme.Gold, TextFormatFlags.HorizontalCenter);
     }
 }

@@ -268,3 +268,25 @@ public class ClamAvConfigurationTests
         Assert.Contains("ConcurrentDatabaseReload no", config);
     }
 }
+
+public class SoundSynthesizerTests
+{
+    [Fact]
+    public void ProducesValidWaveFiles()
+    {
+        foreach (byte[] wav in new[] { SoundSynthesizer.CreateStartupFanfare(), SoundSynthesizer.CreateThreatAlarm(), SoundSynthesizer.CreateScanCompleteChime(), SoundSynthesizer.CreateDatabaseUpdatedChime() })
+        {
+            Assert.Equal("RIFF", Encoding.ASCII.GetString(wav, 0, 4));
+            Assert.Equal("WAVE", Encoding.ASCII.GetString(wav, 8, 4));
+            Assert.Equal(wav.Length - 8, BitConverter.ToInt32(wav, 4));
+            Assert.True(wav.Length > 44100);
+        }
+    }
+
+    [Fact]
+    public void KnowsConcertPitch()
+    {
+        Assert.Equal(440.0, SoundSynthesizer.Frequency("A4"), 3);
+        Assert.Equal(261.626, SoundSynthesizer.Frequency("C4"), 2);
+    }
+}

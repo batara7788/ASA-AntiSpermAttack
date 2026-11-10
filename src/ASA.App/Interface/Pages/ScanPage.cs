@@ -92,6 +92,11 @@ public sealed class ScanPage : PageBase
             string duration = (DateTime.Now - started).ToString(@"hh\:mm\:ss");
             statusLabel.Text = $"{title} завершена за {duration}: проверено {lastProgress.FilesScanned:N0}, угроз {lastProgress.ThreatsFound}";
             Host.Journal.Information(statusLabel.Text);
+            if (lastProgress.ThreatsFound == 0)
+            {
+                Host.Sounds.Play(SoundEvent.ScanCompleted);
+            }
+
             Host.Notifier.Show(title + " завершена", lastProgress.ThreatsFound == 0 ? "Угроз не найдено" : "Найдено угроз: " + lastProgress.ThreatsFound, lastProgress.ThreatsFound == 0 ? ToolTipIcon.Info : ToolTipIcon.Warning);
         }
         catch (OperationCanceledException)

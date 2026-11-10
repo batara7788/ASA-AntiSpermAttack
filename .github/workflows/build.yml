@@ -1,0 +1,37 @@
+name: build
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.x
+
+      - name: Tests
+        run: dotnet test tests/ASA.Core.Tests -c Release
+
+      - name: Publish ASA.exe
+        run: dotnet publish src/ASA.App/ASA.App.csproj -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true -p:EnableCompressionInSingleFile=true -o publish
+
+      - name: Build installer
+        run: |
+          choco install innosetup --no-progress -y
+          & "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe" installer\ASA.iss
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ASA-Setup
+          path: installer/Output/*.exe
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ASA-portable
+          path: publish/ASA.exe

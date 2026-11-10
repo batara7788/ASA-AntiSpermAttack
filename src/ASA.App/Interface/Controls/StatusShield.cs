@@ -21,7 +21,7 @@ public sealed class StatusShield : Control
     {
         DoubleBuffered = true;
         BackColor = Theme.Card;
-        Height = 170;
+        Height = 200;
         animationTimer.Tick += (_, _) =>
         {
             pulse = (pulse + 0.04f) % 1f;
@@ -53,6 +53,7 @@ public sealed class StatusShield : Control
         Graphics graphics = eventArgs.Graphics;
         graphics.SmoothingMode = SmoothingMode.AntiAlias;
         graphics.Clear(Theme.Card);
+        Ornaments.DrawOrnateFrame(graphics, ClientRectangle, Theme.Gold);
 
         Color color = level switch
         {
@@ -75,6 +76,13 @@ public sealed class StatusShield : Control
             graphics.FillPath(fill, shield);
         }
 
+        using (var rimPen = new Pen(Theme.Gold, 3f))
+        {
+            graphics.DrawPath(rimPen, shield);
+        }
+
+        Ornaments.DrawCrown(graphics, new RectangleF(center.X - 18, center.Y - 84, 36, 24), Theme.Gold);
+
         using (var markPen = new Pen(Color.White, 6) { StartCap = LineCap.Round, EndCap = LineCap.Round, LineJoin = LineJoin.Round })
         {
             if (level == ProtectionLevel.Protected)
@@ -93,7 +101,7 @@ public sealed class StatusShield : Control
             }
         }
 
-        TextRenderer.DrawText(graphics, title, Theme.TitleFont, new Point(190, Height / 2 - 36), Theme.Text);
+        TextRenderer.DrawText(graphics, title, Theme.TitleFont, new Point(190, Height / 2 - 36), Theme.PaleGold);
         TextRenderer.DrawText(graphics, subtitle, Theme.BodyFont, new Rectangle(192, Height / 2 + 6, Width - 210, 50), Theme.MutedText, TextFormatFlags.WordBreak);
     }
 

@@ -32,9 +32,10 @@ public sealed class StatCard : Control
     {
         Graphics graphics = eventArgs.Graphics;
         graphics.Clear(Theme.Card);
+        Ornaments.DrawOrnateFrame(graphics, ClientRectangle, Theme.Gold);
         using var accentBrush = new SolidBrush(accent);
-        graphics.FillRectangle(accentBrush, 0, 0, 4, Height);
-        TextRenderer.DrawText(graphics, Caption, Theme.SmallFont, new Point(18, 14), Theme.MutedText);
-        TextRenderer.DrawText(graphics, value, Theme.BigNumberFont, new Rectangle(14, 36, Width - 20, 50), Theme.Text, TextFormatFlags.EndEllipsis);
+        graphics.FillEllipse(accentBrush, 22, 20, 9, 9);
+        TextRenderer.DrawText(graphics, Caption, Theme.SmallFont, new Point(36, 16), Theme.MutedText);
+        TextRenderer.DrawText(graphics, value, Theme.BigNumberFont, new Rectangle(20, 38, Width - 30, 48), Theme.PaleGold, TextFormatFlags.EndEllipsis);
     }
 }

@@ -10,12 +10,12 @@ public sealed class MainForm : Form
     private readonly NotifyIcon trayIcon;
     private readonly Panel pageContainer = new() { Dock = DockStyle.Fill, BackColor = Theme.Background };
     private readonly FlowLayoutPanel navigation;
-    private readonly Dictionary<Button, PageBase> pagesByButton = new();
+    private readonly Dictionary<NavigationItem, PageBase> pagesByButton = new();
     private readonly List<string> pendingCommands = new();
     private readonly OverviewPage overviewPage;
     private readonly ScanPage scanPage;
     private readonly VirusTotalPage virusTotalPage;
-    private Button? activeButton;
+    private NavigationItem? activeButton;
     private bool exitRequested;
 
     public MainForm(ProtectionHost host, bool startInBackground)
@@ -36,14 +36,13 @@ public sealed class MainForm : Form
         overviewPage = new OverviewPage(host, StartQuickScan);
         virusTotalPage = new VirusTotalPage(host);
 
-        navigation = new FlowLayoutPanel
+        navigation = new RoyalSidebar
         {
             Dock = DockStyle.Left,
-            Width = 240,
+            Width = 250,
             FlowDirection = FlowDirection.TopDown,
             WrapContents = false,
-            BackColor = Theme.Sidebar,
-            Padding = new Padding(14, 18, 14, 14)
+            Padding = new Padding(16, 18, 18, 14)
         };
         navigation.Controls.Add(CreateLogo());
 
@@ -176,49 +175,26 @@ public sealed class MainForm : Form
 
     private Control CreateLogo()
     {
-        var panel = new Panel { Width = 210, Height = 92, BackColor = Theme.Sidebar, Margin = new Padding(0, 0, 0, 18) };
-        var iconBox = new PictureBox { Image = Theme.LoadApplicationIcon().ToBitmap(), SizeMode = PictureBoxSizeMode.Zoom, Size = new Size(54, 54), Location = new Point(0, 8) };
-        var title = new Label { Text = "ASA", Font = new Font("Segoe UI Black", 22f), ForeColor = Theme.Text, AutoSize = true, Location = new Point(62, 4) };
-        var subtitle = new Label { Text = "AntiSpermAttack", Font = Theme.SmallFont, ForeColor = Theme.AccentSecondary, AutoSize = true, Location = new Point(65, 46) };
-        var version = new Label { Text = "бесплатный антивирус", Font = Theme.SmallFont, ForeColor = Theme.MutedText, AutoSize = true, Location = new Point(65, 64) };
-        panel.Controls.AddRange(new Control[] { iconBox, title, subtitle, version });
-        return panel;
+        return new RoyalLogo { Margin = new Padding(0, 0, 0, 14) };
     }
 
     private void AddPage(string title, PageBase page)
     {
-        var button = new Button
-        {
-            Text = title,
-            TextAlign = ContentAlignment.MiddleLeft,
-            Width = 210,
-            Height = 42,
-            FlatStyle = FlatStyle.Flat,
-            BackColor = Theme.Sidebar,
-            ForeColor = Theme.MutedText,
-            Font = Theme.NavigationFont,
-            Margin = new Padding(0, 0, 0, 4),
-            Padding = new Padding(10, 0, 0, 0),
-            Cursor = Cursors.Hand
-        };
-        button.FlatAppearance.BorderSize = 0;
-        button.FlatAppearance.MouseOverBackColor = Theme.Card;
+        var button = new NavigationItem(title) { Margin = new Padding(0, 0, 0, 4) };
         button.Click += (_, _) => ShowPage(button);
         navigation.Controls.Add(button);
         pagesByButton[button] = page;
     }
 
-    private void ShowPage(Button button)
+    private void ShowPage(NavigationItem button)
     {
         if (activeButton != null)
         {
-            activeButton.BackColor = Theme.Sidebar;
-            activeButton.ForeColor = Theme.MutedText;
+            activeButton.Selected = false;
         }
 
         activeButton = button;
-        button.BackColor = Theme.Accent;
-        button.ForeColor = Theme.Text;
+        button.Selected = true;
 
         PageBase page = pagesByButton[button];
         pageContainer.SuspendLayout();

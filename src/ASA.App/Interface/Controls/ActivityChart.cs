@@ -26,16 +26,17 @@ public sealed class ActivityChart : Control
         Graphics graphics = eventArgs.Graphics;
         graphics.SmoothingMode = SmoothingMode.AntiAlias;
         graphics.Clear(Theme.Card);
+        Ornaments.DrawOrnateFrame(graphics, ClientRectangle, Theme.Gold);
 
-        TextRenderer.DrawText(graphics, "Активность за 14 дней", Theme.SubtitleFont, new Point(16, 12), Theme.Text);
-        TextRenderer.DrawText(graphics, "проверено файлов   ■ угроз", Theme.SmallFont, new Point(Width - 200, 18), Theme.MutedText);
+        TextRenderer.DrawText(graphics, "Активность за 14 дней", Theme.SubtitleFont, new Point(30, 16), Theme.PaleGold);
+        TextRenderer.DrawText(graphics, "столбец — проверено файлов, рубин — угрозы", Theme.SmallFont, new Point(Width - 300, 22), Theme.MutedText);
 
         if (days.Count == 0)
         {
             return;
         }
 
-        var area = new Rectangle(16, 48, Width - 32, Height - 80);
+        var area = new Rectangle(30, 52, Width - 60, Height - 88);
         long maximum = Math.Max(1, days.Max(day => day.FilesScanned));
         float slot = area.Width / (float)days.Count;
         float barWidth = Math.Max(4, slot * 0.6f);
@@ -56,7 +57,7 @@ public sealed class ActivityChart : Control
 
             if (bar.Height > 2)
             {
-                using var gradient = new LinearGradientBrush(bar, Theme.AccentSecondary, Theme.Accent, LinearGradientMode.Vertical);
+                using var gradient = new LinearGradientBrush(bar, Theme.PaleGold, Theme.Border, LinearGradientMode.Vertical);
                 graphics.FillRectangle(gradient, bar);
             }
 

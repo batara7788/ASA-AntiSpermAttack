@@ -11,7 +11,7 @@ public sealed class OverviewPage : PageBase
     private readonly StatCard quarantineCard = new("В карантине", Theme.Warning);
     private readonly StatCard webShieldCard = new("Опасных сайтов заблокировано", Theme.Accent);
     private readonly ActivityChart chart = new();
-    private readonly FlowLayoutPanel modulesPanel = new() { AutoSize = true, FlowDirection = FlowDirection.LeftToRight, WrapContents = true, BackColor = Theme.Background };
+    private readonly FlowLayoutPanel modulesPanel = new() { AutoSize = true, FlowDirection = FlowDirection.LeftToRight, WrapContents = true, BackColor = Color.Transparent };
     private readonly System.Windows.Forms.Timer refreshTimer = new() { Interval = 2000 };
 
     public OverviewPage(ProtectionHost host, Action quickScan)
@@ -24,7 +24,7 @@ public sealed class OverviewPage : PageBase
         var quickScanButton = Theme.CreateButton("Быстрая проверка", true);
         quickScanButton.Click += (_, _) => quickScan();
 
-        var cards = new FlowLayoutPanel { AutoSize = true, FlowDirection = FlowDirection.LeftToRight, WrapContents = true, BackColor = Theme.Background };
+        var cards = new FlowLayoutPanel { AutoSize = true, FlowDirection = FlowDirection.LeftToRight, WrapContents = true, BackColor = Color.Transparent };
         cards.Controls.AddRange(new Control[] { scannedCard, threatsCard, quarantineCard, webShieldCard });
 
         Content.Controls.Add(shield);

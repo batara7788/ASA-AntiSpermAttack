@@ -28,6 +28,7 @@ public static class ClamAvConfiguration
         builder.AppendLine("AlertBrokenExecutables no");
         builder.AppendLine("HeuristicAlerts yes");
         builder.AppendLine("SelfCheck 3600");
+        builder.AppendLine("ConcurrentDatabaseReload no");
         return builder.ToString();
     }
 

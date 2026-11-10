@@ -257,3 +257,14 @@ public class ClamDaemonIntegrationTests
         Assert.Equal(ScanVerdict.Clean, cleanResult.Verdict);
     }
 }
+
+public class ClamAvConfigurationTests
+{
+    [Fact]
+    public void DaemonDoesNotKeepTwoDatabasesInMemoryDuringReload()
+    {
+        string config = ClamAvConfiguration.BuildDaemonConfig("C:\\db", "C:\\log.txt", 100);
+
+        Assert.Contains("ConcurrentDatabaseReload no", config);
+    }
+}

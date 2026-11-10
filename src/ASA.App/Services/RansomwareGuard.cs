@@ -22,9 +22,11 @@ public sealed class RansomwareGuard : IDisposable
     private readonly List<FileSystemWatcher> watchers = new();
     private readonly List<string> canaryPaths = new();
     private readonly object samplesLock = new();
-    private Dictionary<int, ulong> previousWriteSamples = new();
-    private Dictionary<int, ulong> currentWriteSamples = new();
-    private System.Threading.Timer? samplingTimer;
+    private static readonly TimeSpan QuietPeriod = TimeSpan.FromSeconds(10);
+    private static readonly TimeSpan MinimumMeasurementTime = TimeSpan.FromSeconds(2);
+    private Dictionary<int, ulong> baselineSamples = new();
+    private DateTime baselineTime = DateTime.MinValue;
+    private DateTime lastActivityTime = DateTime.MinValue;
     private bool recreatingCanaries;
 
     public RansomwareGuard(EventJournal journal)
@@ -61,14 +63,10 @@ public sealed class RansomwareGuard : IDisposable
             watcher.EnableRaisingEvents = true;
             watchers.Add(watcher);
         }
-
-        samplingTimer = new System.Threading.Timer(_ => SampleWriteCounters(), null, TimeSpan.Zero, TimeSpan.FromSeconds(2));
     }
 
     public void Stop()
     {
-        samplingTimer?.Dispose();
-        samplingTimer = null;
         foreach (FileSystemWatcher watcher in watchers)
         {
             watcher.EnableRaisingEvents = false;
@@ -205,12 +203,24 @@ public sealed class RansomwareGuard : IDisposable
             return;
         }
 
+        if (!detector.IsCanaryFile(path) && !RansomwareDetector.LooksLikeUserDocument(path))
+        {
+            return;
+        }
+
+        StartMeasuringIfActivityBegins();
+
         RansomwareAlert? alert = detector.RecordModification(path, DateTime.Now);
         if (alert == null)
         {
             return;
         }
 
+        Task.Run(() => HandleAlert(alert));
+    }
+
+    private void HandleAlert(RansomwareAlert alert)
+    {
         RansomwareSuspect? suspect = FindAndSuspendSuspect(alert.Reason);
         if (suspect == null)
         {
@@ -224,7 +234,23 @@ public sealed class RansomwareGuard : IDisposable
         AttackSuspected?.Invoke(suspect, alert.Reason);
     }
 
-    private void SampleWriteCounters()
+    private void StartMeasuringIfActivityBegins()
+    {
+        DateTime now = DateTime.Now;
+        bool activityJustBegan;
+        lock (samplesLock)
+        {
+            activityJustBegan = now - lastActivityTime > QuietPeriod;
+            lastActivityTime = now;
+        }
+
+        if (activityJustBegan)
+        {
+            Task.Run(TakeBaselineSnapshot);
+        }
+    }
+
+    private void TakeBaselineSnapshot()
     {
         var samples = new Dictionary<int, ulong>();
         foreach (Process process in Process.GetProcesses())
@@ -245,17 +271,25 @@ public sealed class RansomwareGuard : IDisposable
 
         lock (samplesLock)
         {
-            previousWriteSamples = currentWriteSamples;
-            currentWriteSamples = samples;
+            baselineSamples = samples;
+            baselineTime = DateTime.Now;
         }
     }
 
     private RansomwareSuspect? FindAndSuspendSuspect(string reason)
     {
         Dictionary<int, ulong> baseline;
+        DateTime measuredSince;
         lock (samplesLock)
         {
-            baseline = previousWriteSamples;
+            baseline = baselineSamples;
+            measuredSince = baselineTime;
+        }
+
+        TimeSpan measuredFor = DateTime.Now - measuredSince;
+        if (measuredFor < MinimumMeasurementTime)
+        {
+            Thread.Sleep(MinimumMeasurementTime - measuredFor);
         }
 
         int ownProcessId = Environment.ProcessId;

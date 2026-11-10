@@ -14,6 +14,7 @@ public sealed class MainForm : Form
     private readonly List<string> pendingCommands = new();
     private readonly OverviewPage overviewPage;
     private readonly ScanPage scanPage;
+    private readonly SmartScanPage smartScanPage;
     private readonly VirusTotalPage virusTotalPage;
     private NavigationItem? activeButton;
     private bool exitRequested;
@@ -33,7 +34,8 @@ public sealed class MainForm : Form
         StartPosition = FormStartPosition.CenterScreen;
 
         scanPage = new ScanPage(host);
-        overviewPage = new OverviewPage(host, StartQuickScan);
+        smartScanPage = new SmartScanPage(host);
+        overviewPage = new OverviewPage(host, StartSmartScan);
         virusTotalPage = new VirusTotalPage(host);
 
         navigation = new RoyalSidebar
@@ -47,6 +49,7 @@ public sealed class MainForm : Form
         navigation.Controls.Add(CreateLogo());
 
         AddPage("Обзор", overviewPage);
+        AddPage("Умная проверка", smartScanPage);
         AddPage("Проверка", scanPage);
         AddPage("Карантин", new QuarantinePage(host));
         AddPage("Автозагрузка", new AutorunPage(host));
@@ -62,7 +65,7 @@ public sealed class MainForm : Form
         trayIcon = CreateTrayIcon();
         host.Notifier.Attach(trayIcon);
         host.Ransomware.AttackSuspected += (suspect, reason) => RunOnInterface(() => HandleRansomware(suspect, reason));
-        host.ScheduledScanRequested += _ => RunOnInterface(() => scanPage.StartScan("Проверка по расписанию", ProtectionHost.GetFullScanLocations));
+        host.ScheduledScanRequested += _ => RunOnInterface(() => smartScanPage.Start(deep: true, filesToo: true));
         host.Engine.StateChanged += () => RunOnInterface(UpdateTrayText);
 
         ShowPage(pagesByButton.First().Key);
@@ -210,6 +213,7 @@ public sealed class MainForm : Form
     {
         var menu = new ContextMenuStrip();
         menu.Items.Add("Открыть ASA", null, (_, _) => ShowWindow());
+        menu.Items.Add("Умная проверка", null, (_, _) => StartSmartScan());
         menu.Items.Add("Быстрая проверка", null, (_, _) => StartQuickScan());
         menu.Items.Add(new ToolStripSeparator());
         menu.Items.Add("Выйти (защита отключится)", null, (_, _) => ExitApplication());
@@ -231,6 +235,13 @@ public sealed class MainForm : Form
         string status = host.Engine.State == EngineState.Ready ? "защита включена" : host.Engine.StatusText;
         string text = "ASA: " + status;
         trayIcon.Text = text.Length > 63 ? text.Substring(0, 63) : text;
+    }
+
+    private void StartSmartScan()
+    {
+        ShowWindow();
+        ShowPage(pagesByButton.First(pair => pair.Value == smartScanPage).Key);
+        smartScanPage.Start(deep: false, filesToo: true);
     }
 
     private void StartQuickScan()

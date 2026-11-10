@@ -12,7 +12,8 @@ public enum PageIcon
     Broom,
     Scales,
     Scroll,
-    Gear
+    Gear,
+    Target
 }
 
 public static class PageIcons
@@ -205,6 +206,18 @@ public static class PageIcons
                 graphics.FillPath(gold, quill);
                 graphics.DrawPath(detailPen, quill);
                 graphics.DrawLine(thinGoldPen, Point(2.6f, 3f), Point(1.8f, 5.6f));
+                break;
+            }
+
+            case PageIcon.Target:
+            {
+                graphics.DrawEllipse(goldPen, Box(-8.5f, -8.5f, 17f, 17f));
+                graphics.DrawEllipse(goldPen, Box(-5f, -5f, 10f, 10f));
+                graphics.FillEllipse(gold, Box(-1.8f, -1.8f, 3.6f, 3.6f));
+                graphics.DrawLine(thinGoldPen, Point(0f, -10.5f), Point(0f, -6.5f));
+                graphics.DrawLine(thinGoldPen, Point(0f, 6.5f), Point(0f, 10.5f));
+                graphics.DrawLine(thinGoldPen, Point(-10.5f, 0f), Point(-6.5f, 0f));
+                graphics.DrawLine(thinGoldPen, Point(6.5f, 0f), Point(10.5f, 0f));
                 break;
             }
 

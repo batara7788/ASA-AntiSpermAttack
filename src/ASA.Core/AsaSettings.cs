@@ -38,6 +38,8 @@ public sealed class AsaSettings
 
     public List<string> ExcludedPaths { get; set; } = new();
 
+    public List<string> TrustedFindings { get; set; } = new();
+
     public long MaximumFileSizeMegabytes { get; set; } = 100;
 }
 

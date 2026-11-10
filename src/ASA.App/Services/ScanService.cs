@@ -76,7 +76,7 @@ public sealed class ScanService : IDisposable
         return result;
     }
 
-    public async Task ScanLocationsAsync(IEnumerable<string> locations, string source, IProgress<ScanProgress> progress, Action<ThreatEvent> onThreat, CancellationToken cancellationToken)
+    public async Task ScanLocationsAsync(IEnumerable<string> locations, string source, IProgress<ScanProgress> progress, Action<ThreatEvent> onThreat, CancellationToken cancellationToken, Func<string, bool>? include = null)
     {
         long scanned = 0;
         long threats = 0;
@@ -93,7 +93,13 @@ public sealed class ScanService : IDisposable
         try
         {
             var options = new ParallelOptions { MaxDegreeOfParallelism = 4, CancellationToken = cancellationToken };
-            await Parallel.ForEachAsync(EnumerateFiles(locations, cancellationToken), options, async (file, token) =>
+            IEnumerable<string> files = EnumerateFiles(locations, cancellationToken);
+            if (include != null)
+            {
+                files = files.Where(include);
+            }
+
+            await Parallel.ForEachAsync(files, options, async (file, token) =>
             {
                 await ScanAndHandleAsync(file, source, token);
                 long count = Interlocked.Increment(ref scanned);

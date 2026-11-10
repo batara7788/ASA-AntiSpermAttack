@@ -21,7 +21,7 @@ public sealed class OverviewPage : PageBase
         StretchToContentWidth(chart);
         shield.Margin = new Padding(0, 0, 0, 16);
 
-        var quickScanButton = Theme.CreateButton("Быстрая проверка", true);
+        var quickScanButton = Theme.CreateButton("Умная проверка", true);
         quickScanButton.Click += (_, _) => quickScan();
 
         var cards = new FlowLayoutPanel { AutoSize = true, FlowDirection = FlowDirection.LeftToRight, WrapContents = true, BackColor = Color.Transparent };

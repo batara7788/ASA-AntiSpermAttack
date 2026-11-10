@@ -25,7 +25,7 @@ public sealed class GlassSection : FlowLayoutPanel
         {
             if (child is Label label)
             {
-                label.MaximumSize = new Size(width - Padding.Horizontal - 40, 0);
+                label.MaximumSize = new Size(width - Padding.Horizontal - 70, 0);
             }
         }
     }
@@ -35,7 +35,7 @@ public sealed class GlassSection : FlowLayoutPanel
         base.OnControlAdded(eventArgs);
         if (eventArgs.Control is Label label && MaximumSize.Width > 0)
         {
-            label.MaximumSize = new Size(MaximumSize.Width - Padding.Horizontal - 40, 0);
+            label.MaximumSize = new Size(MaximumSize.Width - Padding.Horizontal - 70, 0);
         }
     }
 
@@ -155,6 +155,7 @@ public sealed class ImperialCheckBox : CheckBox
 
     protected override bool ShowFocusCues => false;
 
+    [System.Diagnostics.CodeAnalysis.AllowNull]
     public override string Text
     {
         get => base.Text;

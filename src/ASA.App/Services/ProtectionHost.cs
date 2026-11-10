@@ -30,6 +30,9 @@ public sealed class ProtectionHost : IDisposable
         Engine = new ClamAvEngine(Folders, Journal, HttpClient);
         Scanner = new ScanService(Engine, Quarantine, Statistics, Journal, Notifier, () => Settings, Folders.RootFolder);
         Scanner.ThreatDetected += _ => Sounds.Play(SoundEvent.ThreatDetected);
+        Defender = new DefenderEngine();
+        SmartScanner = new SmartScanService(Scanner, Defender, Quarantine, Journal, () => Settings);
+        Auditor = new SystemAuditor(Quarantine);
         RealTime = new RealTimeMonitor(Scanner);
         Usb = new UsbMonitor(Scanner, Journal, Notifier);
         Processes = new ProcessMonitor(Scanner, Journal);
@@ -59,6 +62,12 @@ public sealed class ProtectionHost : IDisposable
     public Notifier Notifier { get; }
 
     public SoundService Sounds { get; }
+
+    public DefenderEngine Defender { get; }
+
+    public SmartScanService SmartScanner { get; }
+
+    public SystemAuditor Auditor { get; }
 
     public ClamAvEngine Engine { get; }
 

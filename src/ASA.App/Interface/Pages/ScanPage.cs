@@ -18,7 +18,7 @@ public sealed class ScanPage : PageBase
     private CancellationTokenSource? scanCancellation;
 
     public ScanPage(ProtectionHost host)
-        : base(host, "Проверка", "Ручная проверка компьютера, папки или файла")
+        : base(host, "Проверка", "Ручная проверка компьютера, папки или файла", PageIcon.Telescope)
     {
         cancelButton.Enabled = false;
         quickButton.Click += (_, _) => StartScan("Быстрая проверка", ProtectionHost.GetQuickScanLocations);

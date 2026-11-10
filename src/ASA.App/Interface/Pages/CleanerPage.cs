@@ -22,7 +22,7 @@ public sealed class CleanerPage : PageBase
     private List<JunkReport> reports = new();
 
     public CleanerPage(ProtectionHost host)
-        : base(host, "Очистка", "Удаляет временные файлы и кэш браузеров. Пароли, история и вкладки не трогаются")
+        : base(host, "Очистка", "Удаляет временные файлы и кэш браузеров. Пароли, история и вкладки не трогаются", PageIcon.Broom)
     {
         cleanButton.Enabled = false;
         analyzeButton.Click += async (_, _) => await AnalyzeAsync();

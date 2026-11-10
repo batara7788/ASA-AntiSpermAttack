@@ -8,7 +8,7 @@ public sealed class QuarantinePage : PageBase
     private readonly ListView itemsList = Theme.CreateListView(("Файл", 420), ("Угроза", 260), ("Когда", 150), ("Размер", 100));
 
     public QuarantinePage(ProtectionHost host)
-        : base(host, "Карантин", "Обезвреженные файлы хранятся здесь в зашифрованном виде и не могут запуститься")
+        : base(host, "Карантин", "Обезвреженные файлы хранятся здесь в зашифрованном виде и не могут запуститься", PageIcon.Chest)
     {
         var restoreButton = Theme.CreateButton("Восстановить");
         var deleteButton = Theme.CreateButton("Удалить навсегда");

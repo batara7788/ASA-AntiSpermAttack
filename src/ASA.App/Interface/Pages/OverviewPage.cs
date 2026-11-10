@@ -15,7 +15,7 @@ public sealed class OverviewPage : PageBase
     private readonly System.Windows.Forms.Timer refreshTimer = new() { Interval = 2000 };
 
     public OverviewPage(ProtectionHost host, Action quickScan)
-        : base(host, "Обзор", "Состояние защиты компьютера")
+        : base(host, "Обзор", "Состояние защиты компьютера", PageIcon.Shield)
     {
         StretchToContentWidth(shield);
         StretchToContentWidth(chart);

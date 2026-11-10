@@ -10,7 +10,7 @@ public sealed class WebShieldPage : PageBase
     private readonly Button updateButton = Theme.CreateButton("Обновить список сейчас", true);
 
     public WebShieldPage(ProtectionHost host)
-        : base(host, "Веб-щит", "Блокирует сайты, которые раздают вирусы. Работает во всех браузерах и программах")
+        : base(host, "Веб-щит", "Блокирует сайты, которые раздают вирусы. Работает во всех браузерах и программах", PageIcon.Globe)
     {
         enabledCheckBox = Theme.CreateCheckBox("Веб-щит включён", host.Settings.WebShieldEnabled);
         enabledCheckBox.CheckedChanged += async (_, _) => await ToggleAsync();

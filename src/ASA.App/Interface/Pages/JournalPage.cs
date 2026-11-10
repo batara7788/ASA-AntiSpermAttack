@@ -9,7 +9,7 @@ public sealed class JournalPage : PageBase
     private readonly CheckBox threatsOnlyCheckBox = Theme.CreateCheckBox("Только угрозы и предупреждения", false);
 
     public JournalPage(ProtectionHost host)
-        : base(host, "Журнал", "Всё, что делал ASA")
+        : base(host, "Журнал", "Всё, что делал ASA", PageIcon.Scroll)
     {
         threatsOnlyCheckBox.CheckedChanged += (_, _) => Reload();
         var openFolderButton = Theme.CreateButton("Открыть папку с логами");

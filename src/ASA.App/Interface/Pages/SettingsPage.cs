@@ -22,7 +22,7 @@ public sealed class SettingsPage : PageBase
     private readonly Label databaseLabel = Theme.CreateLabel(string.Empty, Theme.SmallFont, Theme.MutedText);
 
     public SettingsPage(ProtectionHost host)
-        : base(host, "Настройки", "Что и как защищает ASA")
+        : base(host, "Настройки", "Что и как защищает ASA", PageIcon.Gear)
     {
         realTimeCheckBox = Theme.CreateCheckBox("Защита в реальном времени (проверка новых и изменённых файлов)", host.Settings.RealTimeProtectionEnabled);
         usbCheckBox = Theme.CreateCheckBox("Проверять флешки при подключении", host.Settings.UsbScanEnabled);

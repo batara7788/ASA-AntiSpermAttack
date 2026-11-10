@@ -17,7 +17,7 @@ public sealed class VirusTotalPage : PageBase
     private string? selectedFile;
 
     public VirusTotalPage(ProtectionHost host)
-        : base(host, "VirusTotal", "Второе мнение: файл проверяют больше 70 антивирусов сразу")
+        : base(host, "VirusTotal", "Второе мнение: файл проверяют больше 70 антивирусов сразу", PageIcon.Scales)
     {
         keyTextBox.UseSystemPasswordChar = true;
         keyTextBox.PlaceholderText = "Ключ API VirusTotal";

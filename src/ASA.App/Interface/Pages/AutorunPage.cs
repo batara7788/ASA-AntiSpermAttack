@@ -8,7 +8,7 @@ public sealed class AutorunPage : PageBase
     private readonly ListView entriesList = Theme.CreateListView(("Имя", 220), ("Команда", 520), ("Где", 260));
 
     public AutorunPage(ProtectionHost host)
-        : base(host, "Автозагрузка", "Программы, которые запускаются вместе с Windows. ASA предупреждает о каждой новой")
+        : base(host, "Автозагрузка", "Программы, которые запускаются вместе с Windows. ASA предупреждает о каждой новой", PageIcon.Cannon)
     {
         var refreshButton = Theme.CreateButton("Обновить");
         var removeButton = Theme.CreateButton("Убрать из автозагрузки");

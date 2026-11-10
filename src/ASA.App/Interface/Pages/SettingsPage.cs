@@ -55,12 +55,12 @@ public sealed class SettingsPage : PageBase
         Content.Controls.AddRange(new Control[] { realTimeCheckBox, usbCheckBox, processCheckBox, autorunCheckBox, ransomwareCheckBox, gameModeCheckBox, soundsCheckBox, scheduleCheckBox });
 
         FlowLayoutPanel scheduleRow = Theme.CreateButtonRow();
-        scheduleRow.Controls.Add(Theme.CreateLabel("День:"));
-        scheduleRow.Controls.Add(dayComboBox);
-        scheduleRow.Controls.Add(Theme.CreateLabel("Час:"));
-        scheduleRow.Controls.Add(hourNumeric);
-        scheduleRow.Controls.Add(Theme.CreateLabel("Не проверять файлы больше (МБ):"));
-        scheduleRow.Controls.Add(sizeNumeric);
+        scheduleRow.Controls.Add(new Label { Text = "День:", AutoSize = true, ForeColor = Theme.Text, BackColor = Color.Transparent, Font = Theme.BodyFont, Margin = new Padding(0, 8, 8, 0) });
+        scheduleRow.Controls.Add(new GoldFrame(dayComboBox, 170));
+        scheduleRow.Controls.Add(new Label { Text = "Час:", AutoSize = true, ForeColor = Theme.Text, BackColor = Color.Transparent, Font = Theme.BodyFont, Margin = new Padding(0, 8, 8, 0) });
+        scheduleRow.Controls.Add(new GoldFrame(hourNumeric, 80));
+        scheduleRow.Controls.Add(new Label { Text = "Не проверять файлы больше (МБ):", AutoSize = true, ForeColor = Theme.Text, BackColor = Color.Transparent, Font = Theme.BodyFont, Margin = new Padding(0, 8, 8, 0) });
+        scheduleRow.Controls.Add(new GoldFrame(sizeNumeric, 100));
         Content.Controls.Add(scheduleRow);
 
         Content.Controls.Add(Theme.CreateLabel("Папки под защитой в реальном времени", Theme.SubtitleFont));

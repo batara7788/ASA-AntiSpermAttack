@@ -20,6 +20,17 @@ public static class Ornaments
 
     public static void FillBackgroundFor(Control control, Graphics graphics, Rectangle area, Bitmap tile)
     {
+        GlassSection? section = FindSection(control);
+        if (section != null && section.IsHandleCreated && control.IsHandleCreated)
+        {
+            Point offset = section.PointToClient(control.PointToScreen(Point.Empty));
+            GraphicsState state = graphics.Save();
+            graphics.TranslateTransform(-offset.X, -offset.Y);
+            section.PaintSectionBackground(graphics);
+            graphics.Restore(state);
+            return;
+        }
+
         Form? form = control.FindForm();
         Point origin = Point.Empty;
         if (form != null && control.IsHandleCreated && form.IsHandleCreated)
@@ -53,6 +64,22 @@ public static class Ornaments
             graphics.DrawString(character, font, gold, x, origin.Y, format);
             x += widths[index] + spacing;
         }
+    }
+
+    private static GlassSection? FindSection(Control control)
+    {
+        Control? current = control.Parent;
+        while (current != null)
+        {
+            if (current is GlassSection section)
+            {
+                return section;
+            }
+
+            current = current.Parent;
+        }
+
+        return null;
     }
 
     public static Bitmap CreateEmpireTile(Color background, Color ornament)

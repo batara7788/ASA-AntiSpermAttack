@@ -64,6 +64,17 @@ public abstract class PageBase : UserControl
         return panel;
     }
 
+    protected GlassSection AddSection(params Control[] children)
+    {
+        var section = new GlassSection();
+        section.Controls.AddRange(children);
+        int Width() => Math.Max(560, Content.ClientSize.Width - 24);
+        section.SetFixedWidth(Width());
+        Content.Resize += (_, _) => section.SetFixedWidth(Width());
+        Content.Controls.Add(section);
+        return section;
+    }
+
     protected void StretchToContentWidth(Control control)
     {
         Content.Resize += (_, _) => control.Width = Math.Max(300, Content.ClientSize.Width - 24);

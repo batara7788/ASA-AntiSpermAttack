@@ -27,7 +27,7 @@ public sealed class VirusTotalPage : PageBase
         getKeyLink.LinkClicked += (_, _) => OpenUrl("https://www.virustotal.com/gui/my-apikey");
 
         FlowLayoutPanel keyRow = Theme.CreateButtonRow();
-        keyRow.Controls.AddRange(new Control[] { keyTextBox, saveKeyButton });
+        keyRow.Controls.AddRange(new Control[] { new GoldFrame(keyTextBox, 420) { Height = 36 }, saveKeyButton });
 
         uploadButton.Visible = false;
         checkButton.Click += async (_, _) => await ChooseAndCheckAsync();
@@ -37,19 +37,20 @@ public sealed class VirusTotalPage : PageBase
         FlowLayoutPanel actionRow = Theme.CreateButtonRow();
         actionRow.Controls.AddRange(new Control[] { checkButton, uploadButton });
 
-        Content.Controls.Add(Theme.CreateLabel("Ключ API", Theme.SubtitleFont));
-        Content.Controls.Add(keyRow);
-        Content.Controls.Add(keyStatusLabel);
-        Content.Controls.Add(getKeyLink);
-        Content.Controls.Add(actionRow);
-        Content.Controls.Add(fileLabel);
-        Content.Controls.Add(verdictLabel);
-        Content.Controls.Add(detailsLabel);
-        Content.Controls.Add(reportLink);
-        Content.Controls.Add(Theme.CreateLabel(
-            "Сначала ASA отправляет только отпечаток файла (SHA-256), сам файл никуда не уходит. " +
-            "Если VirusTotal этот файл ещё не видел, его можно отправить целиком, но только по вашему решению: загруженные файлы видят исследователи безопасности, не отправляйте личные документы.",
-            Theme.SmallFont, Theme.MutedText));
+        getKeyLink.Margin = new Padding(0, 0, 0, 4);
+        getKeyLink.BackColor = Color.Transparent;
+        getKeyLink.ActiveLinkColor = Theme.PaleGold;
+        reportLink.BackColor = Color.Transparent;
+        reportLink.ActiveLinkColor = Theme.PaleGold;
+
+        AddSection(Theme.CreateLabel("Ключ API", Theme.SubtitleFont), keyRow, keyStatusLabel, getKeyLink);
+        AddSection(Theme.CreateLabel("Проверка файла", Theme.SubtitleFont), actionRow, fileLabel, verdictLabel, detailsLabel, reportLink);
+        AddSection(
+            Theme.CreateLabel("Что уходит в интернет", Theme.SubtitleFont),
+            Theme.CreateLabel(
+                "Сначала ASA отправляет только отпечаток файла (SHA-256), сам файл никуда не уходит. " +
+                "Если VirusTotal этот файл ещё не видел, его можно отправить целиком, но только по вашему решению: загруженные файлы видят исследователи безопасности, не отправляйте личные документы.",
+                Theme.BodyFont, Theme.MutedText));
     }
 
     public override void OnShown()

@@ -16,14 +16,12 @@ public sealed class WebShieldPage : PageBase
         enabledCheckBox.CheckedChanged += async (_, _) => await ToggleAsync();
         updateButton.Click += async (_, _) => await UpdateAsync();
 
-        Content.Controls.Add(statusLabel);
-        Content.Controls.Add(detailsLabel);
-        Content.Controls.Add(enabledCheckBox);
-        Content.Controls.Add(updateButton);
-        Content.Controls.Add(Theme.CreateLabel(
-            "Как это работает: ASA раз в сутки скачивает список опасных сайтов из базы URLhaus (abuse.ch) и прописывает их в системный файл hosts. " +
+        AddSection(statusLabel, detailsLabel, enabledCheckBox, updateButton);
+        AddSection(Theme.CreateLabel("Как это работает", Theme.SubtitleFont), Theme.CreateLabel(
+            "ASA раз в сутки скачивает список опасных сайтов из базы URLhaus (abuse.ch) и прописывает их в системный файл hosts. " +
             "Браузер не сможет открыть такой сайт. Ваши собственные записи в hosts не трогаются, а копия исходного файла лежит рядом: hosts.asa-backup.",
             Theme.BodyFont, Theme.MutedText));
+        statusLabel.Margin = new Padding(0, 0, 0, 6);
     }
 
     public override void OnShown()

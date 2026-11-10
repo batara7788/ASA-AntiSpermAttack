@@ -45,23 +45,21 @@ public static class Theme
             ForeColor = color ?? Text,
             BackColor = Color.Transparent,
             Margin = new Padding(0, 0, 0, 8),
-            MaximumSize = new Size(900, 0)
+            MaximumSize = new Size(900, 0),
+            UseMnemonic = false
         };
     }
 
     public static CheckBox CreateCheckBox(string text, bool isChecked)
     {
-        return new CheckBox
+        return new ImperialCheckBox
         {
             Text = text,
             Checked = isChecked,
-            AutoSize = true,
-            ForeColor = Text,
-            BackColor = Color.Transparent,
-            Font = BodyFont,
-            Margin = new Padding(0, 0, 0, 8)
+            Margin = new Padding(0, 0, 0, 6)
         };
     }
+
 
     public static ListView CreateListView(params (string Title, int Width)[] columns)
     {

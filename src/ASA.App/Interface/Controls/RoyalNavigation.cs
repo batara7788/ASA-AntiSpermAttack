@@ -30,17 +30,37 @@ public sealed class RoyalSidebar : FlowLayoutPanel
             graphics.DrawLine(goldPen, stripe.Right, 0, stripe.Right, Height);
         }
 
-        using var starBrush = new SolidBrush(Theme.Gold);
-        for (int y = 30; y < Height; y += 46)
-        {
-            Ornaments.DrawStar(graphics, starBrush, new PointF(stripe.Left + stripe.Width / 2, y), 4.5f, 5);
-        }
+        DrawLaurelGarland(graphics, stripe.Left + stripe.Width / 2, 0, Height);
 
         int bottomY = Height - 92;
         var palmetteBrush = new SolidBrush(Color.FromArgb(200, Theme.Gold));
         Ornaments.DrawPalmette(graphics, palmetteBrush, new PointF((Width - 16) / 2f, bottomY + 46), 40);
         palmetteBrush.Dispose();
         Ornaments.DrawMeanderBand(graphics, new RectangleF(14, bottomY + 56, Width - 46, 14), Color.FromArgb(200, Theme.Gold));
+    }
+
+    private static void DrawLaurelGarland(Graphics graphics, float centerX, float top, float bottom)
+    {
+        using var leafBrush = new SolidBrush(Color.FromArgb(230, Theme.Gold));
+        using var darkLeafBrush = new SolidBrush(Color.FromArgb(230, 176, 136, 44));
+        using var stemPen = new Pen(Color.FromArgb(200, Theme.Gold), 1f);
+        graphics.DrawLine(stemPen, centerX, top, centerX, bottom);
+
+        const float step = 9f;
+        int index = 0;
+        for (float y = top + 6; y < bottom; y += step, index++)
+        {
+            int side = index % 2 == 0 ? -1 : 1;
+            Brush brush = index % 4 < 2 ? leafBrush : darkLeafBrush;
+            Ornaments.DrawLeaf(graphics, brush, new PointF(centerX, y), new PointF(centerX + side * 5.2f, y - 6.5f), 1.9f);
+
+            if (index % 12 == 6)
+            {
+                graphics.FillEllipse(leafBrush, centerX - 2.4f, y - 2.4f, 4.8f, 4.8f);
+                using var berryShine = new SolidBrush(Color.FromArgb(160, Color.White));
+                graphics.FillEllipse(berryShine, centerX - 1.2f, y - 1.6f, 1.4f, 1.4f);
+            }
+        }
     }
 }
 

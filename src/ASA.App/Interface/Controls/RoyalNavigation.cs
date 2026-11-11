@@ -74,7 +74,7 @@ public sealed class NavigationItem : Control
     {
         this.numeral = numeral;
         Text = text;
-        Size = new Size(204, 44);
+        Size = new Size(204, 41);
         Cursor = Cursors.Hand;
         SetStyle(ControlStyles.Selectable, false);
         SetStyle(ControlStyles.OptimizedDoubleBuffer | ControlStyles.AllPaintingInWmPaint | ControlStyles.UserPaint, true);

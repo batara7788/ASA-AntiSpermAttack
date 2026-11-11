@@ -13,6 +13,7 @@ public enum PageIcon
     Scales,
     Scroll,
     Gear,
+    Eye,
     Target
 }
 
@@ -206,6 +207,21 @@ public static class PageIcons
                 graphics.FillPath(gold, quill);
                 graphics.DrawPath(detailPen, quill);
                 graphics.DrawLine(thinGoldPen, Point(2.6f, 3f), Point(1.8f, 5.6f));
+                break;
+            }
+
+            case PageIcon.Eye:
+            {
+                using var eye = new System.Drawing.Drawing2D.GraphicsPath();
+                eye.AddBezier(Point(-10f, 0f), Point(-5f, -7.5f), Point(5f, -7.5f), Point(10f, 0f));
+                eye.AddBezier(Point(10f, 0f), Point(5f, 7.5f), Point(-5f, 7.5f), Point(-10f, 0f));
+                eye.CloseFigure();
+                graphics.FillPath(gold, eye);
+                graphics.FillEllipse(darkBrush, Box(-3.6f, -3.6f, 7.2f, 7.2f));
+                graphics.FillEllipse(gold, Box(-1.4f, -1.4f, 2.8f, 2.8f));
+                using var slashShadow = new Pen(Theme.Background, Math.Max(3f, unit * 2.6f)) { StartCap = System.Drawing.Drawing2D.LineCap.Round, EndCap = System.Drawing.Drawing2D.LineCap.Round };
+                graphics.DrawLine(slashShadow, Point(-8.5f, 8.5f), Point(8.5f, -8.5f));
+                graphics.DrawLine(goldPen, Point(-8.5f, 8.5f), Point(8.5f, -8.5f));
                 break;
             }
 

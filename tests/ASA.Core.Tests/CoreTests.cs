@@ -407,3 +407,89 @@ public class HostsAuditTests
         Assert.DoesNotContain("sberbank", HostsAudit.RemoveEntries(hosts, new[] { "www.sberbank.ru" }));
     }
 }
+
+public sealed class FakeRegistry : IRegistryStore
+{
+    public Dictionary<string, object> Values { get; } = new();
+
+    public object? Read(RegistryRoot root, string path, string name) => Values.TryGetValue(root + "|" + path + "|" + name, out object? value) ? value : null;
+
+    public void Write(RegistryRoot root, string path, string name, object value) => Values[root + "|" + path + "|" + name] = value;
+
+    public void Delete(RegistryRoot root, string path, string name) => Values.Remove(root + "|" + path + "|" + name);
+}
+
+public class PrivacyTests
+{
+    [Fact]
+    public void ApplyThenRevertRestoresOriginalValuesAndRemovesNewOnes()
+    {
+        using var folder = new TemporaryFolder();
+        var registry = new FakeRegistry();
+        registry.Write(RegistryRoot.CurrentUser, @"Software\A", "Existing", 1);
+        var manager = new PrivacyManager(registry, Path.Combine(folder.Path, "backup.json"));
+        var setting = new PrivacySetting
+        {
+            Id = "t", Group = "g", Title = "t", Description = "d",
+            Changes = new[] { new RegistryChange(RegistryRoot.CurrentUser, @"Software\A", "Existing", 0), new RegistryChange(RegistryRoot.LocalMachine, @"Software\B", "New", 1) }
+        };
+
+        Assert.False(manager.IsApplied(setting));
+        manager.Apply(setting);
+        manager.Apply(setting);
+        Assert.True(manager.IsApplied(setting));
+
+        manager.Revert(setting);
+
+        Assert.Equal(1, registry.Read(RegistryRoot.CurrentUser, @"Software\A", "Existing"));
+        Assert.Null(registry.Read(RegistryRoot.LocalMachine, @"Software\B", "New"));
+    }
+
+    [Fact]
+    public void CatalogHasUniqueIdsAndNoEmptySettings()
+    {
+        IReadOnlyList<PrivacySetting> all = PrivacyCatalog.All();
+
+        Assert.Equal(all.Count, all.Select(setting => setting.Id).Distinct().Count());
+        Assert.All(all, setting => Assert.NotEmpty(setting.Changes));
+        Assert.Contains(all, setting => setting.Group == PrivacyCatalog.WindowsGroup);
+    }
+
+    [Fact]
+    public void ScoreIsFullOnlyWhenEverythingIsClosed()
+    {
+        Assert.Equal(100, PrivacyManager.CalculateScore(10, 10, true, true));
+        Assert.Equal(0, PrivacyManager.CalculateScore(0, 10, false, false));
+        Assert.Equal(50, PrivacyManager.CalculateScore(5, 10, true, false));
+    }
+
+    [Fact]
+    public void TrackerBlockLivesNextToWebShieldBlock()
+    {
+        string hosts = HostsBlocker.ApplyBlockList("127.0.0.1 my.local\r\n", new[] { "evil.test" });
+        hosts = HostsBlocker.ApplyBlockList(hosts, new[] { "tracker.test", "ads.test" }, HostsBlocker.TrackerBeginMarker, HostsBlocker.TrackerEndMarker);
+
+        Assert.Equal(1, HostsBlocker.CountBlockedDomains(hosts));
+        Assert.Equal(2, HostsBlocker.CountBlockedDomains(hosts, HostsBlocker.TrackerBeginMarker, HostsBlocker.TrackerEndMarker));
+
+        string withoutTrackers = HostsBlocker.RemoveBlockList(hosts, HostsBlocker.TrackerBeginMarker, HostsBlocker.TrackerEndMarker);
+        Assert.Contains("evil.test", withoutTrackers);
+        Assert.DoesNotContain("tracker.test", withoutTrackers);
+        Assert.Empty(HostsAudit.FindSuspiciousRedirects(HostsBlocker.ApplyBlockList("", new[] { "google-analytics.com" }, HostsBlocker.TrackerBeginMarker, HostsBlocker.TrackerEndMarker)));
+    }
+
+    [Fact]
+    public void DnsCommandsEnableEncryptionWithoutPlainFallbackAndRestoreDhcp()
+    {
+        DnsProvider quad9 = EncryptedDnsPlan.Providers.First(provider => provider.Id == "quad9");
+
+        IReadOnlyList<string> enable = EncryptedDnsPlan.BuildEnableCommands(quad9, "Wi-Fi", includeIpv6: false);
+        IReadOnlyList<string> restore = EncryptedDnsPlan.BuildRestoreCommands("Wi-Fi", "ipv4", Array.Empty<string>());
+
+        Assert.Contains(enable, command => command.Contains("server=9.9.9.9") && command.Contains("udpfallback=no"));
+        Assert.Contains(enable, command => command.Contains("name=\"Wi-Fi\"") && command.Contains("address=9.9.9.9"));
+        Assert.DoesNotContain(enable, command => command.Contains("ipv6"));
+        Assert.Equal("interface ipv4 set dnsservers name=\"Wi-Fi\" source=dhcp", restore.Single());
+        Assert.Equal("quad9", EncryptedDnsPlan.FindByAddress("149.112.112.112")?.Id);
+    }
+}

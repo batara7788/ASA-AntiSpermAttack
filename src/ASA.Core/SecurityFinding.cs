@@ -38,7 +38,7 @@ public static class HostsAudit
     public static IReadOnlyList<(string Address, string Domain)> FindSuspiciousRedirects(string hostsText)
     {
         var results = new List<(string Address, string Domain)>();
-        string withoutAsaBlock = HostsBlocker.RemoveBlockList(hostsText);
+        string withoutAsaBlock = HostsBlocker.RemoveBlockList(HostsBlocker.RemoveBlockList(hostsText), HostsBlocker.TrackerBeginMarker, HostsBlocker.TrackerEndMarker);
         foreach (string rawLine in withoutAsaBlock.Split('\n'))
         {
             string line = rawLine.Trim();

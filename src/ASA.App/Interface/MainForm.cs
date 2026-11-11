@@ -29,8 +29,8 @@ public sealed class MainForm : Form
         BackColor = Theme.Background;
         ForeColor = Theme.Text;
         Font = Theme.BodyFont;
-        MinimumSize = new Size(1100, 720);
-        Size = new Size(1240, 800);
+        MinimumSize = new Size(1100, 800);
+        Size = new Size(1240, 840);
         StartPosition = FormStartPosition.CenterScreen;
 
         scanPage = new ScanPage(host);
@@ -54,6 +54,7 @@ public sealed class MainForm : Form
         AddPage("Карантин", new QuarantinePage(host));
         AddPage("Автозагрузка", new AutorunPage(host));
         AddPage("Веб-щит", new WebShieldPage(host));
+        AddPage("Приватность", new PrivacyPage(host));
         AddPage("Очистка", new CleanerPage(host));
         AddPage("VirusTotal", virusTotalPage);
         AddPage("Журнал", new JournalPage(host));
@@ -181,11 +182,11 @@ public sealed class MainForm : Form
         return new RoyalLogo { Margin = new Padding(0, 0, 0, 14) };
     }
 
-    private static readonly string[] RomanNumerals = { "I", "II", "III", "IV", "V", "VI", "VII", "VIII", "IX", "X" };
+    private static readonly string[] RomanNumerals = { "I", "II", "III", "IV", "V", "VI", "VII", "VIII", "IX", "X", "XI", "XII" };
 
     private void AddPage(string title, PageBase page)
     {
-        var button = new NavigationItem(RomanNumerals[pagesByButton.Count], title) { Margin = new Padding(0, 0, 0, 3) };
+        var button = new NavigationItem(RomanNumerals[pagesByButton.Count], title) { Margin = new Padding(0, 0, 0, 1) };
         button.Click += (_, _) => ShowPage(button);
         navigation.Controls.Add(button);
         pagesByButton[button] = page;

@@ -34,6 +34,12 @@ public sealed class AsaSettings
 
     public DateTime LastWebShieldUpdate { get; set; } = DateTime.MinValue;
 
+    public bool TrackerBlockEnabled { get; set; }
+
+    public DateTime LastTrackerUpdate { get; set; } = DateTime.MinValue;
+
+    public string DnsProviderId { get; set; } = "quad9";
+
     public string VirusTotalApiKeyProtected { get; set; } = string.Empty;
 
     public List<string> ExcludedPaths { get; set; } = new();

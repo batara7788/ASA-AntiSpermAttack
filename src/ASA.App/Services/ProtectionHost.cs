@@ -39,6 +39,7 @@ public sealed class ProtectionHost : IDisposable
         Autoruns = new AutorunMonitor(Scanner, Journal, Notifier, Folders.AutorunSnapshotFile);
         Ransomware = new RansomwareGuard(Journal);
         WebShield = new WebShield(HttpClient, Journal);
+        Privacy = new PrivacyService(Folders, HttpClient, Journal);
     }
 
     public event Action? ModulesChanged;
@@ -84,6 +85,8 @@ public sealed class ProtectionHost : IDisposable
     public RansomwareGuard Ransomware { get; }
 
     public WebShield WebShield { get; }
+
+    public PrivacyService Privacy { get; }
 
     public bool FullyProtected => Engine.State == EngineState.Ready && Settings.RealTimeProtectionEnabled && RealTime.IsRunning;
 
@@ -266,6 +269,21 @@ public sealed class ProtectionHost : IDisposable
                 }
 
                 Settings.LastWebShieldUpdate = now;
+                SaveSettings();
+            }
+
+            if (Settings.TrackerBlockEnabled && now - Settings.LastTrackerUpdate > TimeSpan.FromDays(7))
+            {
+                try
+                {
+                    Privacy.Trackers.UpdateAsync(stopSource.Token).GetAwaiter().GetResult();
+                }
+                catch (Exception exception) when (exception is not OperationCanceledException)
+                {
+                    Journal.Warning("Список трекеров не обновился: " + exception.Message);
+                }
+
+                Settings.LastTrackerUpdate = now;
                 SaveSettings();
             }
 

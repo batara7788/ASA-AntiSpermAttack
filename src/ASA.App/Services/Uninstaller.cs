@@ -48,7 +48,13 @@ public static class Uninstaller
         string current = File.ReadAllText(hostsPath);
         if (HostsBlocker.CountBlockedDomains(current) > 0 || current.Contains(HostsBlocker.BeginMarker))
         {
-            File.WriteAllText(hostsPath, HostsBlocker.RemoveBlockList(current), new UTF8Encoding(false));
+            current = HostsBlocker.RemoveBlockList(current);
+            File.WriteAllText(hostsPath, current, new UTF8Encoding(false));
+        }
+
+        if (current.Contains(HostsBlocker.TrackerBeginMarker))
+        {
+            File.WriteAllText(hostsPath, HostsBlocker.RemoveBlockList(current, HostsBlocker.TrackerBeginMarker, HostsBlocker.TrackerEndMarker), new UTF8Encoding(false));
         }
     }
 

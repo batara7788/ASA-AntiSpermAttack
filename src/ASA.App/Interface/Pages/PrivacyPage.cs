@@ -17,6 +17,15 @@ public sealed class PrivacyPage : PageBase
     private readonly Button dnsEnableButton = Theme.CreateButton("Включить шифрованный DNS", true);
     private readonly Button dnsDisableButton = Theme.CreateButton("Выключить");
     private readonly Dictionary<PrivacySetting, CheckBox> settingCheckBoxes = new();
+    private readonly Button auditButton = Theme.CreateButton("Проверить, кто следит", true);
+    private readonly Button watchButton = Theme.CreateButton("Наблюдать за соединениями 60 секунд");
+    private readonly Button auditCancelButton = Theme.CreateButton("Остановить");
+    private readonly Button auditDisableButton = Theme.CreateButton("Отключить выбранное", true);
+    private readonly Button auditEnableButton = Theme.CreateButton("Вернуть выбранное");
+    private readonly Button auditDetailsButton = Theme.CreateButton("Подробности");
+    private readonly Label auditStatusLabel = Theme.CreateLabel("Проверка ещё не запускалась");
+    private readonly ListView auditList = Theme.CreateListView(("Опасность", 120), ("Где", 150), ("Кто", 380), ("Что делает", 520));
+    private CancellationTokenSource? auditCancellation;
     private bool refreshing;
 
     public PrivacyPage(ProtectionHost host)
@@ -31,6 +40,7 @@ public sealed class PrivacyPage : PageBase
         FlowLayoutPanel scoreButtons = Theme.CreateButtonRow();
         scoreButtons.Controls.AddRange(new Control[] { applyAllButton, revertAllButton });
         AddSection(scoreLabel, scoreDetailsLabel, scoreButtons);
+        BuildAuditSection();
 
         trackerCheckBox = Theme.CreateCheckBox("Блокировать рекламные и следящие адреса во всех программах", false);
         trackerCheckBox.CheckedChanged += async (_, _) => await ToggleTrackersAsync();
@@ -86,6 +96,199 @@ public sealed class PrivacyPage : PageBase
         }
 
         UpdateDnsDescription();
+    }
+
+    private void BuildAuditSection()
+    {
+        auditCancelButton.Enabled = false;
+        auditList.MultiSelect = true;
+        auditButton.Click += async (_, _) => await RunAuditAsync(watch: false);
+        watchButton.Click += async (_, _) => await RunAuditAsync(watch: true);
+        auditCancelButton.Click += (_, _) => auditCancellation?.Cancel();
+        auditDisableButton.Click += (_, _) => ChangeSelected(disable: true);
+        auditEnableButton.Click += (_, _) => ChangeSelected(disable: false);
+        auditDetailsButton.Click += (_, _) => ShowAuditDetails();
+        auditList.DoubleClick += (_, _) => ShowAuditDetails();
+
+        FlowLayoutPanel runRow = Theme.CreateButtonRow();
+        runRow.Controls.AddRange(new Control[] { auditButton, watchButton, auditCancelButton });
+        FlowLayoutPanel actionRow = Theme.CreateButtonRow();
+        actionRow.Controls.AddRange(new Control[] { auditDisableButton, auditEnableButton, auditDetailsButton });
+
+        AddSection(
+            Theme.CreateLabel("Аудит слежки: кто на компьютере собирает и отправляет данные", Theme.SubtitleFont),
+            Theme.CreateLabel("Показывает, какие программы и с кем связаны, какие порты открыты в сеть, какие службы и задачи собирают телеметрию, кто пользовался камерой и микрофоном, что работает в фоне и какие следы хранит Windows. ASA видит, кто, куда и как часто отправляет данные, но не их содержимое: оно зашифровано.", Theme.BodyFont, Theme.MutedText),
+            runRow,
+            auditStatusLabel,
+            actionRow);
+
+        Panel listPanel = CreateFillPanel(360);
+        listPanel.Controls.Add(auditList);
+        Content.Controls.Add(listPanel);
+    }
+
+    private async Task RunAuditAsync(bool watch)
+    {
+        if (auditCancellation != null)
+        {
+            return;
+        }
+
+        auditCancellation = new CancellationTokenSource();
+        auditButton.Enabled = false;
+        watchButton.Enabled = false;
+        auditCancelButton.Enabled = true;
+        var progress = new Progress<string>(text => auditStatusLabel.Text = text);
+        auditStatusLabel.ForeColor = Theme.Text;
+
+        try
+        {
+            CancellationToken token = auditCancellation.Token;
+            List<SurveillanceItem> items;
+            if (watch)
+            {
+                items = await Host.Surveillance.WatchConnectionsAsync(TimeSpan.FromSeconds(60), progress, token);
+                for (int index = auditList.Items.Count - 1; index >= 0; index--)
+                {
+                    if (auditList.Items[index].Tag is SurveillanceItem old && old.Category == "Соединения")
+                    {
+                        auditList.Items.RemoveAt(index);
+                    }
+                }
+            }
+            else
+            {
+                items = await Task.Run(() => Host.Surveillance.Run(progress, token), token);
+                auditList.Items.Clear();
+            }
+
+            auditList.BeginUpdate();
+            int position = 0;
+            foreach (SurveillanceItem item in items.OrderByDescending(item => item.Level).ThenBy(item => item.Category))
+            {
+                auditList.Items.Insert(watch ? position++ : auditList.Items.Count, CreateAuditRow(item));
+            }
+
+            auditList.EndUpdate();
+            UpdateAuditSummary(watch ? "Наблюдение завершено. " : "Проверка завершена. ");
+            Host.Journal.Information("Аудит слежки: " + auditStatusLabel.Text);
+        }
+        catch (OperationCanceledException)
+        {
+            auditStatusLabel.Text = "Остановлено";
+        }
+        catch (Exception exception)
+        {
+            auditStatusLabel.Text = "Ошибка: " + exception.Message;
+            Host.Journal.Warning("Аудит слежки: " + exception.Message);
+        }
+        finally
+        {
+            auditCancellation.Dispose();
+            auditCancellation = null;
+            auditButton.Enabled = true;
+            watchButton.Enabled = true;
+            auditCancelButton.Enabled = false;
+        }
+    }
+
+    private void UpdateAuditSummary(string prefix)
+    {
+        List<SurveillanceItem> items = auditList.Items.Cast<ListViewItem>().Select(row => row.Tag).OfType<SurveillanceItem>().ToList();
+        int danger = items.Count(item => item.Level == SurveillanceLevel.Danger);
+        int recommended = items.Count(item => item.Level == SurveillanceLevel.Recommended);
+        int unknown = items.Count(item => item.Level == SurveillanceLevel.Unknown);
+        int disabled = items.Count(item => item.Disabled);
+        auditStatusLabel.Text = $"{prefix}Опасно: {danger}. Стоит закрыть: {recommended}. Неизвестно: {unknown}. Уже отключено: {disabled}.";
+        auditStatusLabel.ForeColor = danger > 0 ? Theme.Danger : recommended > 0 ? Theme.Warning : Theme.Success;
+    }
+
+    private static ListViewItem CreateAuditRow(SurveillanceItem item)
+    {
+        (string label, Color color) = item.Disabled
+            ? ("Отключено", Theme.Success)
+            : item.Level switch
+            {
+                SurveillanceLevel.Danger => ("Опасно", Theme.Danger),
+                SurveillanceLevel.Recommended => ("Стоит закрыть", Theme.Warning),
+                SurveillanceLevel.Unknown => ("Неизвестно", Theme.PaleGold),
+                SurveillanceLevel.DoNotTouch => ("Не трогать", Theme.MutedText),
+                _ => ("Безвредно", Theme.MutedText)
+            };
+
+        return new ListViewItem(new[] { label, item.Category, item.Title, item.Details }) { ForeColor = color, Tag = item };
+    }
+
+    private void ChangeSelected(bool disable)
+    {
+        var selected = auditList.SelectedItems.Cast<ListViewItem>()
+            .Where(row => row.Tag is SurveillanceItem item && (disable ? item.Disable : item.Enable) != null)
+            .ToList();
+        if (selected.Count == 0)
+        {
+            MessageBox.Show(disable
+                ? "Выберите строки, которые можно отключить. У строк «Не трогать» и у системных процессов такой возможности нет."
+                : "Выберите строки с пометкой «Отключено».", "ASA", MessageBoxButtons.OK, MessageBoxIcon.Information);
+            return;
+        }
+
+        string list = string.Join("\n", selected.Select(row =>
+        {
+            var item = (SurveillanceItem)row.Tag!;
+            return "• " + (disable ? item.DisableLabel : item.EnableLabel) + ": " + item.Title;
+        }).Take(15));
+        if (MessageBox.Show("Сделать?\n\n" + list, "ASA: аудит слежки", MessageBoxButtons.YesNo, MessageBoxIcon.Question) != DialogResult.Yes)
+        {
+            return;
+        }
+
+        foreach (ListViewItem row in selected)
+        {
+            var item = (SurveillanceItem)row.Tag!;
+            try
+            {
+                string message = disable ? item.Disable!() : item.Enable!();
+                Host.Journal.Information($"Аудит слежки, {(disable ? item.DisableLabel : item.EnableLabel)}: {item.Title}. {message}");
+                row.SubItems[0].Text = disable ? "Отключено" : "Включено";
+                row.SubItems[3].Text = message;
+                row.ForeColor = disable ? Theme.Success : Theme.Text;
+                row.Tag = null;
+            }
+            catch (Exception exception)
+            {
+                Host.Journal.Warning($"Аудит слежки, не удалось изменить «{item.Title}»: {exception.Message}");
+                row.SubItems[3].Text = "Не удалось: " + exception.Message;
+            }
+        }
+
+        auditList.Invalidate();
+        auditStatusLabel.Text = "Изменения применены. Запустите проверку снова, чтобы увидеть новое состояние.";
+        auditStatusLabel.ForeColor = Theme.Text;
+    }
+
+    private void ShowAuditDetails()
+    {
+        if (auditList.SelectedItems.Count == 0)
+        {
+            return;
+        }
+
+        ListViewItem row = auditList.SelectedItems[0];
+        string text = row.SubItems[2].Text + "\n\n" + row.SubItems[3].Text;
+        if (row.Tag is SurveillanceItem item)
+        {
+            if (item.DisableLabel != null)
+            {
+                text += "\n\nМожно: " + item.DisableLabel;
+            }
+
+            if (item.EnableLabel != null)
+            {
+                text += "\n\nМожно: " + item.EnableLabel;
+            }
+        }
+
+        MessageBox.Show(text, "ASA: подробности", MessageBoxButtons.OK, MessageBoxIcon.Information);
     }
 
     public override void OnShown()

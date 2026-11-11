@@ -493,3 +493,82 @@ public class PrivacyTests
         Assert.Equal("quad9", EncryptedDnsPlan.FindByAddress("149.112.112.112")?.Id);
     }
 }
+
+public class SurveillanceCatalogTests
+{
+    [Theory]
+    [InlineData("stats.g.doubleclick.net", HostKind.Advertising)]
+    [InlineData("v10.events.data.microsoft.com", HostKind.Telemetry)]
+    [InlineData("fra16s48-in-f14.1e100.net", HostKind.Normal)]
+    [InlineData("ctldl.windowsupdate.com", HostKind.SystemUpdate)]
+    [InlineData("some-random-host.example", HostKind.Unknown)]
+    [InlineData("mc.yandex.ru", HostKind.Advertising)]
+    [InlineData("disk.yandex.ru", HostKind.Normal)]
+    public void ClassifiesHosts(string host, HostKind expected)
+    {
+        Assert.Equal(expected, HostClassifier.Classify(host).Kind);
+    }
+
+    [Fact]
+    public void UsesDownloadedTrackerListForSubdomains()
+    {
+        var trackers = new HashSet<string> { "evil-tracker.test" };
+
+        Assert.Equal(HostKind.Advertising, HostClassifier.Classify("cdn.eu.evil-tracker.test", trackers).Kind);
+        Assert.Equal(HostKind.Unknown, HostClassifier.Classify("good.test", trackers).Kind);
+    }
+
+    [Theory]
+    [InlineData("192.168.1.10", false)]
+    [InlineData("127.0.0.1", false)]
+    [InlineData("10.0.0.5", false)]
+    [InlineData("8.8.8.8", true)]
+    [InlineData("fe80::1", false)]
+    [InlineData("2606:4700:4700::1111", true)]
+    public void SeparatesPublicAddresses(string address, bool expected)
+    {
+        Assert.Equal(expected, HostClassifier.IsPublicAddress(System.Net.IPAddress.Parse(address)));
+    }
+
+    [Fact]
+    public void RatesPorts()
+    {
+        Assert.Equal(SurveillanceLevel.Danger, PortCatalog.Describe(3389, true).Level);
+        Assert.Equal(SurveillanceLevel.DoNotTouch, PortCatalog.Describe(49670, true).Level);
+        Assert.Equal(SurveillanceLevel.Unknown, PortCatalog.Describe(49670, false).Level);
+    }
+
+    [Fact]
+    public void ReadsTaskState()
+    {
+        string enabled = "<Task xmlns=\"http://schemas.microsoft.com/windows/2004/02/mit/task\"><Settings><Enabled>true</Enabled></Settings></Task>";
+        string disabled = enabled.Replace("true", "false");
+        string missing = "<Task xmlns=\"http://schemas.microsoft.com/windows/2004/02/mit/task\"><Settings /></Task>";
+
+        Assert.True(TelemetryCatalog.ReadTaskEnabled(enabled));
+        Assert.False(TelemetryCatalog.ReadTaskEnabled(disabled));
+        Assert.True(TelemetryCatalog.ReadTaskEnabled(missing));
+        Assert.Null(TelemetryCatalog.ReadTaskEnabled("not xml"));
+    }
+
+    [Fact]
+    public void AssessesCameraUsageAndDecodesNames()
+    {
+        DateTime now = DateTime.Now;
+
+        Assert.Equal(SurveillanceLevel.Danger, CapabilityAccess.Assess(now.AddMinutes(-5), null, now, out _));
+        Assert.Equal(SurveillanceLevel.Recommended, CapabilityAccess.Assess(now.AddDays(-2), now.AddDays(-2), now, out _));
+        Assert.Equal(SurveillanceLevel.Harmless, CapabilityAccess.Assess(now.AddDays(-40), now.AddDays(-40), now, out _));
+        Assert.Equal(@"C:\Program Files\App\app.exe", CapabilityAccess.DecodeProgramPath("C:#Program Files#App#app.exe"));
+        Assert.Equal("WindowsCamera", CapabilityAccess.DescribePackage("Microsoft.WindowsCamera_8wekyb3d8bbwe"));
+    }
+
+    [Fact]
+    public void StartupApprovalRoundTrip()
+    {
+        Assert.True(StartupApproval.IsDisabled(StartupApproval.CreateValue(true)));
+        Assert.False(StartupApproval.IsDisabled(StartupApproval.CreateValue(false)));
+        Assert.False(StartupApproval.IsDisabled(null));
+        Assert.Equal("OneDrive", TelemetryCatalog.MatchBackgroundProgram("OneDrive", "\"C:\\x\\OneDrive.exe\" /background")?.Title);
+    }
+}

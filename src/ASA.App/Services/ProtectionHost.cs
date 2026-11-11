@@ -40,6 +40,7 @@ public sealed class ProtectionHost : IDisposable
         Ransomware = new RansomwareGuard(Journal);
         WebShield = new WebShield(HttpClient, Journal);
         Privacy = new PrivacyService(Folders, HttpClient, Journal);
+        Surveillance = new SurveillanceAuditor(Folders, Journal);
     }
 
     public event Action? ModulesChanged;
@@ -87,6 +88,8 @@ public sealed class ProtectionHost : IDisposable
     public WebShield WebShield { get; }
 
     public PrivacyService Privacy { get; }
+
+    public SurveillanceAuditor Surveillance { get; }
 
     public bool FullyProtected => Engine.State == EngineState.Ready && Settings.RealTimeProtectionEnabled && RealTime.IsRunning;
 
